@@ -32,4 +32,5 @@ class OrderHistory:
             if order.number == order_number:
                 return order
 
-        raise IndexError('The order with the specified number does not exist')
+        return None
+        # raise IndexError('The order with the specified number does not exist')

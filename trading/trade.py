@@ -1,5 +1,6 @@
 from trading.api import Poloniex
 from trading.order_history import OrderHistory
+import time
 
 
 class Trade:
@@ -12,8 +13,8 @@ class Trade:
 
     def buy(self, poloniex, rate, amount, currency_pair='BTC_LTC'):
         assert isinstance(poloniex, Poloniex)
-        if self.buy_order is not None:
-            raise AssertionError('Cannot place more than one buy order for a trade')
+        # if self.buy_order is not None:
+        #     raise AssertionError('Cannot place more than one buy order for a trade')
 
         order = poloniex.buy(currencyPair=currency_pair, rate=rate, amount=amount)
         if 'error' in order:
@@ -21,14 +22,15 @@ class Trade:
             return None
         else:
             order_number = order['orderNumber']
+            time.sleep(5)  # wait for the trade to propagate
             self.buy_order = OrderHistory(poloniex, minutes=15, currency_pair=currency_pair).get_order(order_number)
 
             return self.buy_order
 
     def sell(self, poloniex, rate, amount, currency_pair='BTC_LTC'):
         assert isinstance(poloniex, Poloniex)
-        if self.sell_order is not None:
-            raise AssertionError('Cannot place more than one buy order for a trade')
+        # if self.sell_order is not None:
+        #     raise AssertionError('Cannot place more than one buy order for a trade')
 
         order = poloniex.sell(currencyPair=currency_pair, rate=rate, amount=amount)
         if 'error' in order:
