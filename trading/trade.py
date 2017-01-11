@@ -1,5 +1,5 @@
-from trading.api import Poloniex
-from trading.order_history import OrderHistory
+from trading import Poloniex, OrderHistory
+from trading.logger import log
 import time
 
 
@@ -18,7 +18,7 @@ class Trade:
 
         order = poloniex.buy(currencyPair=currency_pair, rate=rate, amount=amount)
         if 'error' in order:
-            print(order['error'])
+            log(order['error'], True)
             return None
         else:
             order_number = order['orderNumber']
@@ -34,7 +34,7 @@ class Trade:
 
         order = poloniex.sell(currencyPair=currency_pair, rate=rate, amount=amount)
         if 'error' in order:
-            print(order['error'])
+            log(order['error'], True)
             return None
         else:
             order_number = order['orderNumber']
@@ -53,3 +53,14 @@ class Trade:
 
     def is_sell(self):
         return not self.complete() and self.sell_order is not None
+
+    def total_amount(self):
+        amount = 0.0
+
+        if self.buy_order is not None:
+            amount += self.buy_order.amount
+
+        if self.sell_order is not None:
+            amount += self.sell_order.amount
+
+        return amount

@@ -2,6 +2,7 @@ from threading import Timer
 
 from trading import Poloniex, ITradeAlgorithm, MyTradeAlgorithm, TradeCurrency, log
 import time
+from datetime import datetime
 
 api_key = 'JA05T2TZ-JYVRPM9G-AR07NWDI-20WXQ5NZ'
 api_secret = 'd75a1522554d8ee9bd877e63a0aa38b1c32d082c8b66a556e063080ff45fe9d0eef1b1c406089408cd52216f0a6111daf756b5e56ad490cf835ecb086bc6a8d4'
@@ -21,7 +22,6 @@ trade_items = [
 
 def update_loop(algorithm):
     assert isinstance(algorithm, ITradeAlgorithm)
-    print()
     algorithm.update()
 
     loop = Timer(update_interval, update_loop, [algorithm])
@@ -31,6 +31,7 @@ def update_loop(algorithm):
 def main():
     try:
         poloniex = Poloniex(api_key, api_secret)
+        log('\n\n\n' + str(datetime.now()), True)
         log('Welcome to the Poloniex trading bot!', True)
 
         for item in trade_items:

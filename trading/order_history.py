@@ -1,4 +1,5 @@
 from trading import Poloniex, Order
+from trading.logger import log
 from datetime import datetime, timedelta
 
 
@@ -20,7 +21,7 @@ class OrderHistory:
         start = datetime.now() - timedelta(minutes=self.minutes)
         history = self.poloniex.returnAccountTradeHistory(self.currency_pair, start)
         if 'error' in history:
-            print(history['error'])
+            log(history['error'], True)
         else:
             for order in history:
                 self.orders.insert(0, Order(order, self.currency_pair))

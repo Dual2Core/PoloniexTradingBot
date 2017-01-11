@@ -47,43 +47,101 @@ class ITradeAlgorithm:
         raise NotImplementedError()
 
 
-class MyTradeAlgorithm(ITradeAlgorithm):
-    trades = []
+class MyTradeAlgorithmOld(ITradeAlgorithm):
+    # trades = []
+    combined_trade = None
     last_trade_type = TradeResult.none
 
     def update_trade_history(self):
-        self.trades.clear()
+        # self.trades.clear()
 
         time_diff = datetime.now() - self.start_time
         minutes = self.history_in_minutes + (time_diff.total_seconds() / 60.0)
         history = OrderHistory(self.poloniex, minutes, self.currency_pair)
 
-        found = []
-        for i, order in enumerate(history.orders):
-            assert isinstance(order, Order)
-            if i not in found:
-                found.append(i)
+        # self.combine_trades(history.orders)
+        self.combine_orders(history.orders)
 
-                if order.total > 0:
-                    trade = Trade(sell=order)
-                    self.trades.insert(0, trade)
-                    for j, matching_order in enumerate(history.orders):
-                        assert isinstance(matching_order, Order)
-                        if j not in found:
-                            if matching_order.total < 0 and matching_order.rate < order.rate:
-                                found.append(j)
-                                trade.buy_order = matching_order
-                                break
-                elif order.total < 0:
-                    trade = Trade(buy=order)
-                    self.trades.insert(0, trade)
-                    for j, matching_order in enumerate(history.orders):
-                        assert isinstance(matching_order, Order)
-                        if j not in found:
-                            if matching_order.total > 0 and matching_order.rate > order.rate:
-                                found.append(j)
-                                trade.sell_order = matching_order
-                                break
+        # found = []
+        # for i, order in enumerate(history.orders):
+        #     assert isinstance(order, Order)
+        #     if i not in found:
+        #         found.append(i)
+        #
+        #         if order.total > 0:
+        #             trade = Trade(sell=order)
+        #             self.trades.insert(0, trade)
+        #             for j, matching_order in enumerate(history.orders):
+        #                 assert isinstance(matching_order, Order)
+        #                 if j not in found:
+        #                     if matching_order.total < 0 and matching_order.rate < order.rate:
+        #                         found.append(j)
+        #                         trade.buy_order = matching_order
+        #                         break
+        #         elif order.total < 0:
+        #             trade = Trade(buy=order)
+        #             self.trades.insert(0, trade)
+        #             for j, matching_order in enumerate(history.orders):
+        #                 assert isinstance(matching_order, Order)
+        #                 if j not in found:
+        #                     if matching_order.total > 0 and matching_order.rate > order.rate:
+        #                         found.append(j)
+        #                         trade.sell_order = matching_order
+        #                         break
+
+    def combine_orders(self, orders):
+        if len(orders):
+            order = orders[0]
+            for i, nxt_order in enumerate(orders, 1):
+                order.combine(nxt_order)
+
+            if order.amount > 0 > order.total:
+                self.combined_trade = Trade(buy=order)
+            elif order.amount < 0 < order.total:
+                self.combined_trade = Trade(sell=order)
+            else:
+                self.combined_trade = None
+
+    # def combine_trades(self, orders):
+    #     if len(orders) < 2:
+    #         return orders
+    #
+    #     found = []
+    #     for i, order in enumerate(orders):
+    #         if i not in found:
+    #             assert isinstance(order, Order)
+    #             found.append(i)
+    #             trade = Trade(buy=order) if order.is_buy() else Trade(sell=order)
+    #             matching_order = Order.from_currency_pair(('sell' if order.is_buy() else 'buy'), self.currency_pair)
+    #
+    #             is_buy_trade = trade.is_buy()
+    #
+    #             for j, nxt_order in enumerate(orders):
+    #                 if j not in found:
+    #                     assert isinstance(nxt_order, Order)
+    #                     if is_buy_trade:
+    #                         if nxt_order.is_buy():
+    #                             trade.buy_order = trade.buy_order.combine(nxt_order)
+    #                             found.append(j)
+    #                         else:
+    #                             if trade.buy_order.amount + matching_order.amount > 0:
+    #                                 matching_order = matching_order.combine(nxt_order)
+    #                                 trade.sell_order = matching_order
+    #                                 found.append(j)
+    #                                 if trade.total_amount() <= 0:
+    #                                     break
+    #                     else:
+    #                         if nxt_order.is_sell():
+    #                             trade.sell_order = trade.sell_order.combine(nxt_order)
+    #                             found.append(j)
+    #                         else:
+    #                             if trade.sell_order.amount + matching_order.amount < 0:
+    #                                 matching_order = matching_order.combine(nxt_order)
+    #                                 trade.buy_order = matching_order
+    #                                 found.append(j)
+    #                                 if trade.total_amount() >= 0:
+    #                                     break
+    #             self.trades.insert(0, trade)
 
     def update_chart_data(self):
         ticker = self.poloniex.returnTicker()
@@ -120,33 +178,45 @@ class MyTradeAlgorithm(ITradeAlgorithm):
 
     def update(self):
         try:
-            self.update_trade_history()
-            self.update_chart_data()
-            self.update_balances()
-            incomplete_trades = []
+            log('Updating ' + self.currency_pair + '...')
+            try:
+                self.update_trade_history()
+                self.update_balances()
+                self.update_chart_data()
+            except Exception:
+                log('an error occurred while updating from the server', True)
+            # incomplete_trades = []
+            #
+            # for trade in self.trades:
+            #     assert isinstance(trade, Trade)
+            #     if not trade.complete():
+            #         incomplete_trades.append(trade)
 
-            for trade in self.trades:
-                assert isinstance(trade, Trade)
-                if not trade.complete():
-                    incomplete_trades.append(trade)
+            # log('Open ' + self.currency_pair + ' trades: ' + str(len(incomplete_trades)))
+            # if len(incomplete_trades) > 0:
+            #     for trade in incomplete_trades:
+            #         self.last_trade_type = self.trade_when_profitable(trade)
+            #         if self.last_trade_type == TradeResult.success:
+            #             break  # only perform one successful trade per update
+            # else:
+            #     # Go by the last trade if its order wasn't filled
+            #     trade = Trade()
+            #     if len(self.trades):
+            #         if self.trades[0].buy_order.amount - self.trades[0].sell_order.amount > self.min_alt:
+            #             log('comparing against last complete trade')
+            #             trade = self.trades[0]
+            #     self.last_trade_type = self.open_new_position(trade)
 
-            log('Open ' + self.currency_pair + ' trades: ' + str(len(incomplete_trades)))
-            if len(incomplete_trades) > 0:
-                for trade in incomplete_trades:
-                    self.last_trade_type = self.trade_when_profitable(trade)
-                    if self.last_trade_type == TradeResult.success:
-                        break  # only perform one successful trade per update
+            if self.combined_trade is not None:
+                self.last_trade_type = self.trade_when_profitable(self.combined_trade)
             else:
-                trade = Trade()
-                if len(self.trades):
-                    trade = self.trades[0]
-                self.last_trade_type = self.open_new_position(trade)
+                self.last_trade_type = self.open_new_position(Trade())
 
         except AttributeError as e:
             log(e.args)
 
     def open_new_position(self, trade):
-        self.trades.insert(0, trade)
+        # self.trades.insert(0, trade)
         return self.trade_when_profitable(trade)
 
     def trade_when_profitable(self, trade):
@@ -183,12 +253,12 @@ class MyTradeAlgorithm(ITradeAlgorithm):
 
     def sell(self, trade):
         assert isinstance(trade, Trade)
-        # if the balance can afford it, sell the full amount of the previous buy otherwise, percent of alt balance
+        # if the balance can afford it, sell the full amount of the previous buy, otherwise percent of alt balance
         amount = self.alt_balance * self.alt_percent
-        if (trade.is_buy() or trade.complete()) and self.alt_balance > trade.buy_order.amount:
-            amount = trade.buy_order.amount
-        if (self.alt_balance - amount) > self.min_alt:
-            log('Selling ' + str(amount) + ' ' + self.currency_pair + ' at: ' + str(self.highest_bid))
+        if trade.is_buy() or trade.complete():
+            amount = min(self.alt_balance - self.min_alt, trade.buy_order.amount)
+        if (self.alt_balance - amount) >= self.min_alt:
+            log('Selling ' + str(amount) + ' ' + self.currency_pair + ' at: ' + str(self.highest_bid), True)
             order = trade.sell(self.poloniex, self.highest_bid, amount, self.currency_pair)
             if order is not None:
                 assert isinstance(order, Order)
@@ -201,10 +271,10 @@ class MyTradeAlgorithm(ITradeAlgorithm):
 
     def buy(self, trade):
         assert isinstance(trade, Trade)
-        main_amount = self.main_balance * self.main_percent # the amount of main to spend on this order
-        if (self.main_balance - main_amount) > self.min_main:
+        main_amount = self.main_balance * self.main_percent  # the amount of main to spend on this order
+        if (self.main_balance - main_amount) >= self.min_main:
             amount = main_amount / self.lowest_ask
-            log('Buying ' + str(amount) + ' ' + self.currency_pair + ' at: ' + str(self.lowest_ask))
+            log('Buying ' + str(amount) + ' ' + self.currency_pair + ' at: ' + str(self.lowest_ask), True)
             order = trade.buy(self.poloniex, self.lowest_ask, amount, self.currency_pair)
             if order is not None:
                 assert isinstance(order, Order)
@@ -243,6 +313,174 @@ class MyTradeAlgorithm(ITradeAlgorithm):
             current_ema = (c * value) + ((1 - c) * current_ema)
         return current_ema
 
+class MyTradeAlgorithm(ITradeAlgorithm):
+    combined_order = None
+    last_trade_type = TradeResult.none
+
+    def update_trade_history(self):
+        time_diff = datetime.now() - self.start_time
+        minutes = self.history_in_minutes + (time_diff.total_seconds() / 60.0)
+        history = OrderHistory(self.poloniex, minutes, self.currency_pair)
+
+        self.combine_orders(history.orders)
+
+    def combine_orders(self, orders):
+        if len(orders):
+            self.combined_order = orders[0]
+            for i, nxt_order in enumerate(orders, 1):
+                self.combined_order.combine(nxt_order)
+
+    def update_chart_data(self):
+        ticker = self.poloniex.returnTicker()
+        if 'error' in ticker:
+            log(ticker['error'], True)
+        else:
+            self.highest_bid = float(ticker[self.currency_pair]['highestBid'])
+            self.lowest_ask = float(ticker[self.currency_pair]['lowestAsk'])
+
+            start1 = datetime.now() + timedelta(hours=2)
+            start2 = datetime.now() + timedelta(hours=4)
+            scd = self.poloniex.returnChartData(currencyPair=self.currency_pair, period=300, start=start1)
+            lcd = self.poloniex.returnChartData(currencyPair=self.currency_pair, period=300, start=start2)
+
+            ma1 = []
+            ma2 = []
+            for data in scd:
+                ma1.append(data['weightedAverage'])
+            for data in lcd:
+                ma2.append(data['weightedAverage'])
+
+            self.ema1 = self.ema(ma1)  # self.sma(ma1, len(ma1))
+            self.ema2 = self.ema(ma2)
+
+    def update_balances(self):
+        balances = self.poloniex.returnBalances()
+
+        cp_split = self.currency_pair.split('_')
+        main_currency = cp_split[0]
+        alt_currency = cp_split[1]
+
+        self.main_balance = float(balances[main_currency])
+        self.alt_balance = float(balances[alt_currency])
+
+    def update(self):
+        try:
+            log('Updating ' + self.currency_pair + '...')
+            try:
+                self.update_trade_history()
+                self.update_balances()
+                self.update_chart_data()
+            except Exception:
+                log('an error occurred while updating from the server', True)
+
+            if self.combined_trade is not None:
+                self.last_trade_type = self.trade_when_profitable(self.combined_trade)
+            else:
+                self.last_trade_type = self.open_new_position(Trade())
+
+        except AttributeError as e:
+            log(e.args)
+
+    def open_new_position(self, trade):
+        # self.trades.insert(0, trade)
+        return self.trade_when_profitable(trade)
+
+    def trade_when_profitable(self, trade):
+        assert isinstance(trade, Trade)
+        can_sell, can_buy = self.can_buy_or_sell()
+
+        if can_sell:
+            if trade.empty():
+                if self.last_trade_type != TradeResult.failure:
+                    log('Opening new sell position for ' + self.currency_pair + ' at ' + str(self.highest_bid), True)
+                return self.sell(trade)
+            elif trade.is_buy() or trade.complete():
+                profit = (
+                         self.highest_bid - (self.highest_bid * 0.0025)) - trade.buy_order.rate  # assume a fee of 0.25%
+                log('Can sell ' + self.currency_pair + ' at a profit of ' + "{0:.9f}".format(profit))
+                if profit < -self.new_order_threshold:
+                    return self.open_new_position(Trade())
+                elif profit > self.min_profit:
+                    return self.sell(trade)
+
+        elif can_buy:
+            if trade.empty():
+                if self.last_trade_type != TradeResult.failure:
+                    log('Opening new buy position for ' + self.currency_pair + ' at ' + str(self.lowest_ask), True)
+                return self.buy(trade)
+            elif trade.is_sell() or trade.complete():
+                profit = trade.sell_order.rate - (self.lowest_ask + (self.lowest_ask * 0.0025))  # assume a fee of 0.25%
+                log('Can buy ' + self.currency_pair + ' at a profit of ' + "{0:.9f}".format(profit))
+                if profit < -self.new_order_threshold:
+                    return self.open_new_position(Trade())
+                elif profit > self.min_profit:
+                    return self.buy(trade)
+
+        return TradeResult.none
+
+    def sell(self, trade):
+        assert isinstance(trade, Trade)
+        # if the balance can afford it, sell the full amount of the previous buy, otherwise percent of alt balance
+        amount = self.alt_balance * self.alt_percent
+        if trade.is_buy() or trade.complete():
+            amount = min(self.alt_balance - self.min_alt, trade.buy_order.amount)
+        if (self.alt_balance - amount) >= self.min_alt:
+            log('Selling ' + str(amount) + ' ' + self.currency_pair + ' at: ' + str(self.highest_bid), True)
+            order = trade.sell(self.poloniex, self.highest_bid, amount, self.currency_pair)
+            if order is not None:
+                assert isinstance(order, Order)
+                log(str(datetime.now()) + ' - Sold ' + str(order.amount) + ' ' + self.currency_pair + ' for ' + str(
+                    order.total) + ' at ' + str(order.rate), True)
+                return TradeResult.success
+        elif self.last_trade_type != TradeResult.failure:
+            log('Not enough funds in your ' + self.currency_pair + ' account!', True)
+
+        return TradeResult.failure
+
+    def buy(self, trade):
+        assert isinstance(trade, Trade)
+        main_amount = self.main_balance * self.main_percent  # the amount of main to spend on this order
+        if (self.main_balance - main_amount) >= self.min_main:
+            amount = main_amount / self.lowest_ask
+            log('Buying ' + str(amount) + ' ' + self.currency_pair + ' at: ' + str(self.lowest_ask), True)
+            order = trade.buy(self.poloniex, self.lowest_ask, amount, self.currency_pair)
+            if order is not None:
+                assert isinstance(order, Order)
+                log(str(datetime.now()) + ' - Bought ' + str(order.amount) + ' ' + self.currency_pair + ' for ' + str(
+                    order.total) + ' at ' + str(order.rate), True)
+                return TradeResult.success
+        elif self.last_trade_type != TradeResult.failure:
+            log('Not enough funds in your ' + self.currency_pair + ' account!', True)
+        return TradeResult.failure
+
+    def can_buy_or_sell(self):
+        can_buy = False
+        can_sell = False
+
+        if self.ema1 > 0 and self.ema2 > 0:
+            # ignore areas where the ema's are on top of each other
+            ema_diff = abs(self.ema1 - self.ema2)
+            if ema_diff > self.ema_diff:
+                if self.highest_bid > max(self.ema1, self.ema2):
+                    can_sell = True
+                if self.lowest_ask < min(self.ema1, self.ema2):
+                    can_buy = True
+
+        return can_sell, can_buy
+
+    @staticmethod
+    def sma(data, window):
+        if len(data) < window:
+            return None
+        return sum(data[-window:]) / float(window)
+
+    def ema(self, data):
+        window = int(len(data) / 2)
+        c = 2.0 / (window + 1)
+        current_ema = self.sma(data[-window * 2:-window], window)
+        for value in data[-window:]:
+            current_ema = (c * value) + ((1 - c) * current_ema)
+        return current_ema
 
 # The same as MyTradeAlgorithm, but it doesn't worry about past trades
 # Do not use yet!
