@@ -3,6 +3,9 @@ def log(msg, preserve_line=False):
     start = '\r'  # '\n' if preserve_line else '\r'
     print(start + str(msg), end=end)
 
-    with open('log.txt', 'a') as file:
-        log_end = '\n\n' if preserve_line else '\n'
-        file.write(str(msg) + log_end)
+    try:
+        with open('log.txt', 'a') as file:
+            log_end = '\n\n' if preserve_line else '\n'
+            file.write(str(msg) + log_end)
+    except PermissionError:
+        log(msg, preserve_line)
