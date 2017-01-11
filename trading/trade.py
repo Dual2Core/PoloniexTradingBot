@@ -23,7 +23,7 @@ class Trade:
         else:
             order_number = order['orderNumber']
             time.sleep(5)  # wait for the trade to propagate
-            self.buy_order = OrderHistory(poloniex, minutes=15, currency_pair=currency_pair).get_order(order_number)
+            self.buy_order = OrderHistory(poloniex, minutes=60, currency_pair=currency_pair).get_order(order_number)
 
             return self.buy_order
 

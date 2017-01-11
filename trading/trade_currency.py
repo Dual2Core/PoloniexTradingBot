@@ -12,7 +12,7 @@ class TradeCurrency:
     def __init__(self, currency_pair,
                  alt_percent=0.4,                       # (0-1) deal in 40% of alt currency (leaves room for fees)
                  main_percent=0.1,                      # (0-1) deal in 10% of main currency
-                 min_profit=.05,                        # (%) about 5% (the change in BTC price since the last trade)
+                 min_profit=.1,                         # (%) about 10% (the change in BTC price since the last trade)
                  new_order_threshold=.1,                # (%) if the profit loss is greater than this open a new order
                  ema_diff=0.000001,                     # (BTC) only trade when the ema's are not on top of each other
                  min_main=0.0005,                       # (BTC) reserve at least this much of the main currency
