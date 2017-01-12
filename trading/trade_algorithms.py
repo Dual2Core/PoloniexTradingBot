@@ -378,12 +378,15 @@ class MyTradeAlgorithm(ITradeAlgorithm):
     def update_balances(self):
         balances = self.poloniex.returnBalances()
 
-        cp_split = self.currency_pair.split('_')
-        main_currency = cp_split[0]
-        alt_currency = cp_split[1]
+        if 'error' in balances:
+            log(balances['error'], True)
+        else:
+            cp_split = self.currency_pair.split('_')
+            main_currency = cp_split[0]
+            alt_currency = cp_split[1]
 
-        self.main_balance = float(balances[main_currency])
-        self.alt_balance = float(balances[alt_currency])
+            self.main_balance = float(balances[main_currency])
+            self.alt_balance = float(balances[alt_currency])
 
     def update(self):
         try:
@@ -405,11 +408,11 @@ class MyTradeAlgorithm(ITradeAlgorithm):
         if can_sell:
             main_amount, amount = self.calculate_sell_amount()
             log('Opening a new sell order for ' + self.currency_pair, True)
-            return self.sell(amount)
+            return self.sell(amount, 0)
         elif can_buy:
             main_amount, amount = self.calculate_buy_amount()
             log('Opening a new buy order for ' + self.currency_pair, True)
-            return self.buy(main_amount, amount)
+            return self.buy(main_amount, amount, 0)
 
     def trade_when_profitable(self):
         can_sell, can_buy = self.can_buy_or_sell()
@@ -425,7 +428,7 @@ class MyTradeAlgorithm(ITradeAlgorithm):
                     log('Profit percent has fallen below the threshold', True)
                     return self.open_new_position()
                 elif profit_percent > self.min_profit:
-                    return self.sell(amount)
+                    return self.sell(amount, profit_percent)
             else:
                 log('No previous buys to compare against', True)
                 self.open_new_position()
@@ -443,7 +446,7 @@ class MyTradeAlgorithm(ITradeAlgorithm):
                         log('Profit percent has fallen below the threshold', True)
                         return self.open_new_position()
                     elif profit_percent > self.min_profit:
-                        return self.buy(main_amount, amount)
+                        return self.buy(main_amount, amount, profit_percent)
                 elif self.combined_buy is None or -self.combined_buy.total < self.max_buy_order:
                     log('No previous sells to compare against', True)
                     self.open_new_position()
@@ -469,26 +472,28 @@ class MyTradeAlgorithm(ITradeAlgorithm):
 
         return main_amount, amount
 
-    def sell(self, amount):
+    def sell(self, amount, profit_percent):
         if (self.alt_balance - amount) >= self.min_alt and amount > 0:
             log('Selling ' + str(amount) + ' ' + self.currency_pair + ' at: ' + str(self.highest_bid), True)
             order = Trade().sell(self.poloniex, self.highest_bid, amount, self.currency_pair)
             if order is not None:
                 assert isinstance(order, Order)
-                log(str(datetime.now()) + ' - Sold ' + str(order.amount) + ' ' + self.currency_pair + ' for ' + str(order.total) + ' at ' + str(order.rate), True)
+                log(str(datetime.now()) + ' - Sold ' + str(order.amount) + ' ' + self.currency_pair + ' for ' + str(
+                    order.total) + ' at ' + str(order.rate) + ' for a ' + str(profit_percent * 100) + '$ profit', True)
                 return TradeResult.success
         elif self.last_trade_type != TradeResult.failure:
             log('Not enough funds in your ' + self.currency_pair.split('_')[1] + ' account!', True)
 
         return TradeResult.failure
 
-    def buy(self, main_amount, amount):
+    def buy(self, main_amount, amount, profit_percent):
         if (self.main_balance - main_amount) >= self.min_main:
             log('Buying ' + str(amount) + ' ' + self.currency_pair + ' at: ' + str(self.lowest_ask), True)
             order = Trade().buy(self.poloniex, self.lowest_ask, amount, self.currency_pair)
             if order is not None:
                 assert isinstance(order, Order)
-                log(str(datetime.now()) + ' - Bought ' + str(order.amount) + ' ' + self.currency_pair + ' for ' + str(order.total) + ' at ' + str(order.rate), True)
+                log(str(datetime.now()) + ' - Bought ' + str(order.amount) + ' ' + self.currency_pair + ' for ' + str(
+                    order.total) + ' at ' + str(order.rate) + ' for a ' + str(profit_percent * 100) + '$ profit', True)
                 return TradeResult.success
         elif self.last_trade_type != TradeResult.failure:
             log('Not enough funds in your ' + self.currency_pair.split('_')[0] + ' account!', True)
@@ -525,59 +530,3 @@ class MyTradeAlgorithm(ITradeAlgorithm):
         for value in data[-window:]:
             current_ema = (c * value) + ((1 - c) * current_ema)
         return current_ema
-
-# The same as MyTradeAlgorithm, but it doesn't worry about past trades
-# Do not use yet!
-# class GunbotTradeAlgorithm(MyTradeAlgorithm):
-#     def trade_when_profitable(self, trade):
-#         assert isinstance(trade, Trade)
-#         can_sell, can_buy = self.can_buy_or_sell()
-#
-#         if can_sell:
-#             profit = self.highest_bid - trade.buy_order.rate
-#             log('Can sell ' + self.currency_pair + ' at a profit of ' + "{0:.9f}".format(profit))
-#             if profit < -self.new_order_threshold:
-#                 return self.open_new_position()
-#             elif profit > self.min_profit:
-#                 return self.sell(trade)
-#
-#         if can_sell:
-#             if trade.empty():
-#                 if self.last_trade_type != TradeResult.failure:
-#                     log('Opening new sell position for ' + self.currency_pair + ' at ' + str(self.highest_bid), True)
-#                 return self.sell(trade)
-#             else:
-#                 profit = self.highest_bid - trade.buy_order.rate
-#                 log('Can sell ' + self.currency_pair + ' at a profit of ' + "{0:.9f}".format(profit))
-#                 if profit < -self.new_order_threshold:
-#                     return self.open_new_position()
-#                 elif profit > self.min_profit:
-#                     return self.sell(trade)
-#
-#         elif can_buy:
-#             if trade.empty():
-#                 if self.last_trade_type != TradeResult.failure:
-#                     log('Opening new buy position for ' + self.currency_pair + ' at ' + str(self.lowest_ask), True)
-#                 return self.buy(trade)
-#             else:
-#                 profit = trade.sell_order.rate - self.lowest_ask
-#                 log('Can buy ' + self.currency_pair + ' at a profit of ' + "{0:.9f}".format(profit))
-#                 if profit < -self.new_order_threshold:
-#                     return self.open_new_position()
-#                 elif profit > self.min_profit:
-#                     return self.buy(trade)
-#
-#         return TradeResult.none
-#
-#     def sell(self, trade):
-#         assert isinstance(trade, Trade)
-#         # if the balance can afford it, sell the full amount of the previous buy otherwise, 10% of alt balance
-#         amount = self.alt_balance * self.alt_percent
-#         log(datetime.now(), True)
-#         log('Selling ' + str(amount) + ' ' + self.currency_pair + ' at: ' + str(self.highest_bid))
-#         order = trade.sell(self.poloniex, self.highest_bid, amount, self.currency_pair)
-#         if order is not None:
-#             assert isinstance(order, Order)
-#             log('Sold ' + str(order.amount) + ' ' + self.currency_pair + ' for ' + str(order.total) + ' at ' + str(order.rate), True)
-#             return TradeResult.success
-#         # return TradeResult.failure
