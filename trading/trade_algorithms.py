@@ -15,8 +15,9 @@ class ITradeAlgorithm:
     currency_pair = ''
     alt_percent = 0.0
     main_percent = 0.0
-    min_profit = 0.0
-    max_buy_order = 0.0
+    min_buy_profit = 0.0
+    min_sell_profit = 0.0
+    new_currency_threshold = 0.0
     new_order_threshold = 0.0
     min_main = 0.0
     min_alt = 0.0
@@ -29,13 +30,14 @@ class ITradeAlgorithm:
     main_balance = 0.0
     alt_balance = 0.0
 
-    def __init__(self, poloniex, alt_percent, main_percent, min_profit, max_buy_order, new_order_threshold, min_main, min_alt, history_in_minutes, currency_pair):
+    def __init__(self, poloniex, alt_percent, main_percent, min_buy_profit, min_sell_profit, new_currency_threshold, new_order_threshold, min_main, min_alt, history_in_minutes, currency_pair):
         assert isinstance(poloniex, Poloniex)
         self.poloniex = poloniex
         self.alt_percent = alt_percent
         self.main_percent = main_percent
-        self.min_profit = min_profit
-        self.max_buy_order = max_buy_order
+        self.min_buy_profit = min_buy_profit
+        self.min_sell_profit = min_sell_profit
+        self.new_currency_threshold = new_currency_threshold
         self.new_order_threshold = new_order_threshold
         self.min_main = min_main
         self.min_alt = min_alt
@@ -233,7 +235,7 @@ class MyTradeAlgorithmOld(ITradeAlgorithm):
                 log('Can sell ' + self.currency_pair + ' at a profit of ' + "{0:.9f}".format(profit))
                 if profit < -self.new_order_threshold:
                     return self.open_new_position(Trade())
-                elif profit > self.min_profit:
+                elif profit > self.min_sell_profit:
                     return self.sell(trade)
 
         elif can_buy:
@@ -246,7 +248,7 @@ class MyTradeAlgorithmOld(ITradeAlgorithm):
                 log('Can buy ' + self.currency_pair + ' at a profit of ' + "{0:.9f}".format(profit))
                 if profit < -self.new_order_threshold:
                     return self.open_new_position(Trade())
-                elif profit > self.min_profit:
+                elif profit > self.min_buy_profit:
                     return self.buy(trade)
 
         return TradeResult.none
@@ -422,12 +424,12 @@ class MyTradeAlgorithm(ITradeAlgorithm):
             if self.combined_buy is not None:
                 # sell rate / buy rate (assume a fee of 0.25%)
                 profit_percent = ((self.highest_bid - (self.highest_bid * 0.0025)) / self.combined_buy.rate) - 1
-                log('Can sell ' + self.currency_pair + ' at a profit of ' + "{0:.2f}".format(profit_percent * 100) + '%')
+                log('Can sell ' + self.currency_pair + ' at a profit of ' + "{0:.2f}".format(profit_percent * 100) + '% / ' + "{0:.2f}".format(self.min_sell_profit * 100) + '%')
 
                 if profit_percent < -self.new_order_threshold:
                     log('Profit percent has fallen below the threshold', True)
                     return self.open_new_position()
-                elif profit_percent > self.min_profit:
+                elif profit_percent > self.min_sell_profit:
                     return self.sell(amount, profit_percent)
             else:
                 log('No previous buys to compare against', True)
@@ -440,14 +442,14 @@ class MyTradeAlgorithm(ITradeAlgorithm):
                 if self.combined_sell is not None:
                     # sell rate / buy rate (assume a fee of 0.25%)
                     profit_percent = (self.combined_sell.rate / (self.lowest_ask + (self.lowest_ask * 0.0025))) - 1
-                    log('Can buy ' + self.currency_pair + ' at a profit of ' + "{0:.2f}".format(profit_percent * 100) + '%')
+                    log('Can buy ' + self.currency_pair + ' at a profit of ' + "{0:.2f}".format(profit_percent * 100) + '% / ' + "{0:.2f}".format(self.min_sell_profit * 100) + '%')
 
                     if profit_percent < -self.new_order_threshold:
                         log('Profit percent has fallen below the threshold', True)
                         return self.open_new_position()
-                    elif profit_percent > self.min_profit:
+                    elif profit_percent > self.min_buy_profit:
                         return self.buy(main_amount, amount, profit_percent)
-                elif self.combined_buy is None or -self.combined_buy.total < self.max_buy_order:
+                elif self.combined_buy is None or -self.combined_buy.total < self.new_currency_threshold:
                     log('No previous sells to compare against', True)
                     self.open_new_position()
 

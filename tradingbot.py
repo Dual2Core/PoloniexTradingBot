@@ -35,8 +35,9 @@ def load_config():
         trade_items.append(TradeCurrency(currency_pair=pair,
                                          main_percent=float(cfg['BOT']['main_percent']) / 100.0,
                                          alt_percent=float(cfg['BOT']['alt_percent']) / 100.0,
-                                         min_profit=float(cfg['BOT']['min_profit']) / 100.0,
-                                         max_buy_order=float(cfg['BOT']['new_currency_threshold']),
+                                         min_buy_profit=float(cfg['BOT']['min_buy_profit']) / 100.0,
+                                         min_sell_profit=float(cfg['BOT']['min_sell_profit']) / 100.0,
+                                         new_currency_threshold=float(cfg['BOT']['new_currency_threshold']),
                                          new_order_threshold=float(cfg['BOT']['new_order_threshold']) / 100.0,
                                          min_main=float(cfg['BOT']['min_main']),
                                          min_alt=float(cfg['BOT']['min_alt']),
@@ -60,11 +61,13 @@ def main():
         log('Welcome to the Poloniex trading bot!', True)
 
         for item in trade_items:
+            assert isinstance(item, TradeCurrency)
             algorithm = MyTradeAlgorithm(poloniex=poloniex,
                                          alt_percent=item.alt_percent,
                                          main_percent=item.main_percent,
-                                         min_profit=item.min_profit,
-                                         max_buy_order=item.max_buy_order,
+                                         min_buy_profit=item.min_buy_profit,
+                                         min_sell_profit=item.min_sell_profit,
+                                         new_currency_threshold=item.new_currency_threshold,
                                          new_order_threshold=item.new_order_threshold,
                                          min_main=item.min_main,
                                          min_alt=item.min_alt,
