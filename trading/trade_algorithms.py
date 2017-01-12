@@ -325,14 +325,7 @@ class MyTradeAlgorithm(ITradeAlgorithm):
         minutes = self.history_in_minutes + (time_diff.total_seconds() / 60.0)
         history = OrderHistory(self.poloniex, minutes, self.currency_pair)
 
-        # self.combine_orders(history.orders)
         self.combine_buy_sell_orders(history.orders)
-
-    # def combine_orders(self, orders):
-    #     if len(orders):
-    #         self.combined_order = orders[0]
-    #         for i, nxt_order in enumerate(orders, 1):
-    #             self.combined_order.combine(nxt_order)
 
     def combine_buy_sell_orders(self, orders):
         buy_order_rates = []
@@ -394,7 +387,6 @@ class MyTradeAlgorithm(ITradeAlgorithm):
 
     def update(self):
         try:
-            log('Updating ' + self.currency_pair + '...')
             try:
                 self.update_balances()
                 self.update_trade_history()
