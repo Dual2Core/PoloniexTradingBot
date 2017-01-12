@@ -12,12 +12,13 @@ api_key = ''
 api_secret = ''
 
 update_interval = 0
+update_separation = 0
 
 trade_items = []
 
 
 def load_config():
-    global api_key, api_secret, update_interval, trade_items
+    global api_key, api_secret, update_interval, update_separation, trade_items
 
     cfg = ConfigParser()
     cfg.read('config.cfg')
@@ -25,17 +26,18 @@ def load_config():
     api_key = cfg['API']['key']
     api_secret = cfg['API']['secret']
 
-    update_interval = int(cfg['BOT']['update_interval']) * 60
+    update_interval = float(cfg['BOT']['update_interval']) * 60
+    update_separation = float(cfg['BOT']['update_separation']) * 60
 
     currency_pairs = cfg['CURRENCY']['currency_pairs'].split(',')
 
     for pair in currency_pairs:
         trade_items.append(TradeCurrency(currency_pair=pair,
-                                         main_percent=float(cfg['BOT']['main_percent']),
-                                         alt_percent=float(cfg['BOT']['alt_percent']),
-                                         min_profit=float(cfg['BOT']['min_profit']),
-                                         max_buy_order=float(cfg['BOT']['max_buy_order']),
-                                         new_order_threshold=float(cfg['BOT']['new_order_threshold']),
+                                         main_percent=float(cfg['BOT']['main_percent']) / 100.0,
+                                         alt_percent=float(cfg['BOT']['alt_percent']) / 100.0,
+                                         min_profit=float(cfg['BOT']['min_profit']) / 100.0,
+                                         max_buy_order=float(cfg['BOT']['new_currency_threshold']),
+                                         new_order_threshold=float(cfg['BOT']['new_order_threshold']) / 100.0,
                                          min_main=float(cfg['BOT']['min_main']),
                                          min_alt=float(cfg['BOT']['min_alt']),
                                          trading_history_in_minutes=int(cfg['BOT']['trading_history'])))
@@ -69,7 +71,7 @@ def main():
                                          history_in_minutes=item.trading_history_in_minutes,
                                          currency_pair=item.currency_pair)
             update_loop(algorithm)
-            time.sleep(update_interval / len(trade_items))  # separate each coin loop
+            time.sleep(update_separation)  # separate each coin loop
     except KeyboardInterrupt:
         quit()
 
