@@ -432,7 +432,7 @@ class MyTradeAlgorithm(ITradeAlgorithm):
                 elif profit_percent > self.min_sell_profit:
                     return self.sell(amount, profit_percent)
             else:
-                log('No previous buys to compare against', True)
+                log(self.currency_pair + ': No previous buys to compare against', True)
                 self.open_new_position()
 
         elif can_buy:
