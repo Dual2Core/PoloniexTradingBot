@@ -481,7 +481,7 @@ class MyTradeAlgorithm(ITradeAlgorithm):
             if order is not None:
                 assert isinstance(order, Order)
                 log(str(datetime.now()) + ' - Sold ' + str(order.amount) + ' ' + self.currency_pair + ' for ' + str(
-                    order.total) + ' at ' + str(order.rate) + ' for a ' + str(profit_percent * 100) + '$ profit', True)
+                    order.total) + ' at ' + str(order.rate) + ' for a ' + str(profit_percent * 100) + '% profit', True)
                 return TradeResult.success
         elif self.last_trade_type != TradeResult.failure:
             log('Not enough funds in your ' + self.currency_pair.split('_')[1] + ' account!', True)
@@ -495,7 +495,7 @@ class MyTradeAlgorithm(ITradeAlgorithm):
             if order is not None:
                 assert isinstance(order, Order)
                 log(str(datetime.now()) + ' - Bought ' + str(order.amount) + ' ' + self.currency_pair + ' for ' + str(
-                    order.total) + ' at ' + str(order.rate) + ' for a ' + str(profit_percent * 100) + '$ profit', True)
+                    order.total) + ' at ' + str(order.rate) + ' for a ' + str(profit_percent * 100) + '% profit', True)
                 return TradeResult.success
         elif self.last_trade_type != TradeResult.failure:
             log('Not enough funds in your ' + self.currency_pair.split('_')[0] + ' account!', True)
