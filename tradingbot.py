@@ -1,23 +1,44 @@
 from threading import Timer
 
-from trading import Poloniex, ITradeAlgorithm, MyTradeAlgorithm, TradeCurrency, log
 import time
 from datetime import datetime
 
-api_key = 'JA05T2TZ-JYVRPM9G-AR07NWDI-20WXQ5NZ'
-api_secret = 'd75a1522554d8ee9bd877e63a0aa38b1c32d082c8b66a556e063080ff45fe9d0eef1b1c406089408cd52216f0a6111daf756b5e56ad490cf835ecb086bc6a8d4'
+from trading import Poloniex, ITradeAlgorithm, MyTradeAlgorithm, TradeCurrency, log
 
-update_interval = 60 * 5  # update every x seconds
+from configparser import ConfigParser
 
-# see trade_currency.py for default values
-trade_items = [
-    TradeCurrency(currency_pair='BTC_ETH'),
-    TradeCurrency(currency_pair='BTC_XMR'),
-    TradeCurrency(currency_pair='BTC_LTC'),
-    TradeCurrency(currency_pair='BTC_XRP'),
-    TradeCurrency(currency_pair='BTC_DASH'),
-    TradeCurrency(currency_pair='BTC_SDC'),
-]
+
+api_key = ''
+api_secret = ''
+
+update_interval = 0
+
+trade_items = []
+
+
+def load_config():
+    global api_key, api_secret, update_interval, trade_items
+
+    cfg = ConfigParser()
+    cfg.read('config.cfg')
+
+    api_key = cfg['API']['key']
+    api_secret = cfg['API']['secret']
+
+    update_interval = int(cfg['BOT']['update_interval']) * 60
+
+    currency_pairs = cfg['CURRENCY']['currency_pairs'].split(',')
+
+    for pair in currency_pairs:
+        trade_items.append(TradeCurrency(currency_pair=pair,
+                                         main_percent=float(cfg['BOT']['main_percent']),
+                                         alt_percent=float(cfg['BOT']['alt_percent']),
+                                         min_profit=float(cfg['BOT']['min_profit']),
+                                         max_buy_order=float(cfg['BOT']['max_buy_order']),
+                                         new_order_threshold=float(cfg['BOT']['new_order_threshold']),
+                                         min_main=float(cfg['BOT']['min_main']),
+                                         min_alt=float(cfg['BOT']['min_alt']),
+                                         trading_history_in_minutes=int(cfg['BOT']['trading_history'])))
 
 
 def update_loop(algorithm):
@@ -30,18 +51,19 @@ def update_loop(algorithm):
 
 def main():
     try:
+        load_config()
+
         poloniex = Poloniex(api_key, api_secret)
-        log('\n\n\n' + str(datetime.now()), True)
+        log('\n\n\n\n' + str(datetime.now()), True)
         log('Welcome to the Poloniex trading bot!', True)
 
         for item in trade_items:
-            # log('Trading: ' + item.currency_pair, True)
             algorithm = MyTradeAlgorithm(poloniex=poloniex,
                                          alt_percent=item.alt_percent,
                                          main_percent=item.main_percent,
                                          min_profit=item.min_profit,
+                                         max_buy_order=item.max_buy_order,
                                          new_order_threshold=item.new_order_threshold,
-                                         ema_diff=item.ema_diff,
                                          min_main=item.min_main,
                                          min_alt=item.min_alt,
                                          history_in_minutes=item.trading_history_in_minutes,

@@ -1,0 +1,35 @@
+[API]
+key = YOUR_API_KEY_HERE
+secret = YOUR_API_SECRET_HERE
+
+[CURRENCY]
+currency_pairs = BTC_ETH,BTC_XMR,BTC_ETC,BTC_LTC,BTC_XRP,BTC_DASH,BTC_SDC
+
+[BOT]
+# (minutes) the number of minutes in between each update
+update_interval = 10
+
+# (0-1) buy with 10% of main currency	
+main_percent = 0.10
+
+# (0-1) sell with 20% of alt currency
+alt_percent = 0.20
+
+# (0-1) 2.3% (the change in BTC price since the last opposing trade)
+min_profit = 0.023
+
+# (BTC) about $1.00 when starting with a new currency don't spend more than this on buy orders
+max_buy_order = 0.001
+
+# (0-1) if the profit loss is greater than this, open a new order
+new_order_threshold = 0.15
+
+# (BTC) reserve at least this much of the main currency
+min_main = 0.0005
+
+# (ALT) reserve at least this much of the alt currency
+min_alt = 0.0
+
+# (minutes) gather 1 year of trading history for decision making (60 * 24 * 365 * 1)
+trading_history = 525600		
+

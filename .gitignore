@@ -7,3 +7,4 @@ error.log
 *.idea
 *.csv
 log.txt
+*.cfg

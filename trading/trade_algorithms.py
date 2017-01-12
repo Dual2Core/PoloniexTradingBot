@@ -16,8 +16,8 @@ class ITradeAlgorithm:
     alt_percent = 0.0
     main_percent = 0.0
     min_profit = 0.0
+    max_buy_order = 0.0
     new_order_threshold = 0.0
-    ema_diff = 0.0
     min_main = 0.0
     min_alt = 0.0
     history_in_minutes = 0
@@ -29,14 +29,14 @@ class ITradeAlgorithm:
     main_balance = 0.0
     alt_balance = 0.0
 
-    def __init__(self, poloniex, alt_percent, main_percent, min_profit, new_order_threshold, ema_diff, min_main, min_alt, history_in_minutes, currency_pair):
+    def __init__(self, poloniex, alt_percent, main_percent, min_profit, max_buy_order, new_order_threshold, min_main, min_alt, history_in_minutes, currency_pair):
         assert isinstance(poloniex, Poloniex)
         self.poloniex = poloniex
         self.alt_percent = alt_percent
         self.main_percent = main_percent
         self.min_profit = min_profit
+        self.max_buy_order = max_buy_order
         self.new_order_threshold = new_order_threshold
-        self.ema_diff = ema_diff
         self.min_main = min_main
         self.min_alt = min_alt
         self.history_in_minutes = history_in_minutes
@@ -178,7 +178,7 @@ class MyTradeAlgorithmOld(ITradeAlgorithm):
 
     def update(self):
         try:
-            log('Updating ' + self.currency_pair + '...')
+            log('Updating ' + self.currency_pair)
             try:
                 self.update_trade_history()
                 self.update_balances()
@@ -315,7 +315,9 @@ class MyTradeAlgorithmOld(ITradeAlgorithm):
 
 
 class MyTradeAlgorithm(ITradeAlgorithm):
-    combined_order = None
+    # combined_order = None
+    combined_buy = None
+    combined_sell = None
     last_trade_type = TradeResult.none
 
     def update_trade_history(self):
@@ -323,13 +325,39 @@ class MyTradeAlgorithm(ITradeAlgorithm):
         minutes = self.history_in_minutes + (time_diff.total_seconds() / 60.0)
         history = OrderHistory(self.poloniex, minutes, self.currency_pair)
 
-        self.combine_orders(history.orders)
+        # self.combine_orders(history.orders)
+        self.combine_buy_sell_orders(history.orders)
 
-    def combine_orders(self, orders):
-        if len(orders):
-            self.combined_order = orders[0]
-            for i, nxt_order in enumerate(orders, 1):
-                self.combined_order.combine(nxt_order)
+    # def combine_orders(self, orders):
+    #     if len(orders):
+    #         self.combined_order = orders[0]
+    #         for i, nxt_order in enumerate(orders, 1):
+    #             self.combined_order.combine(nxt_order)
+
+    def combine_buy_sell_orders(self, orders):
+        buy_order_rates = []
+        sell_order_rates = []
+
+        for i, order in enumerate(orders):
+            if order.is_buy():
+                buy_order_rates.append(order.rate)
+                self.combined_buy = order if self.combined_buy is None else self.combined_buy.combine(order)
+            else:
+                sell_order_rates.append(order.rate)
+                self.combined_sell = order if self.combined_sell is None else self.combined_sell.combine(order)
+
+        # assign more weight to recent trades
+        if self.combined_buy is not None:
+            self.combined_buy.rate = self.ema(buy_order_rates)
+
+        if self.combined_sell is not None:
+            self.combined_sell.rate = self.ema(sell_order_rates)
+
+        if self.combined_buy is not None and self.combined_sell is not None:
+            if abs(self.combined_buy.amount + self.combined_sell.amount) <= (self.alt_balance * self.alt_percent):
+                log('Combined buys and sells cancel each other for ' + self.currency_pair, True)
+                self.combined_buy = None
+                self.combined_sell = None
 
     def update_chart_data(self):
         ticker = self.poloniex.returnTicker()
@@ -368,16 +396,13 @@ class MyTradeAlgorithm(ITradeAlgorithm):
         try:
             log('Updating ' + self.currency_pair + '...')
             try:
-                self.update_trade_history()
                 self.update_balances()
+                self.update_trade_history()
                 self.update_chart_data()
-            except Exception:
-                log('an error occurred while updating from the server', True)
+            except Exception as e:
+                log('an error occurred while updating from the server: ' + str(e.args), True)
 
-            if self.combined_order is not None:
-                self.last_trade_type = self.trade_when_profitable()
-            else:
-                self.last_trade_type = self.open_new_position()
+            self.last_trade_type = self.trade_when_profitable()
 
         except AttributeError as e:
             log(e.args)
@@ -387,79 +412,73 @@ class MyTradeAlgorithm(ITradeAlgorithm):
 
         if can_sell:
             main_amount, amount = self.calculate_sell_amount()
-            if main_amount > 0.0001:
-                log('Opening a new sell order for ' + self.currency_pair, True)
-                return self.sell(amount)
+            log('Opening a new sell order for ' + self.currency_pair, True)
+            return self.sell(amount)
         elif can_buy:
             main_amount, amount = self.calculate_buy_amount()
-            if main_amount > 0.0001:
-                log('Opening a new buy order for ' + self.currency_pair, True)
-                return self.buy(main_amount, amount)
+            log('Opening a new buy order for ' + self.currency_pair, True)
+            return self.buy(main_amount, amount)
 
     def trade_when_profitable(self):
         can_sell, can_buy = self.can_buy_or_sell()
 
         if can_sell:
-            if self.combined_order is None:
-                return self.open_new_position()
+            main_amount, amount = self.calculate_sell_amount()
+            if self.combined_buy is not None:
+                # sell rate / buy rate (assume a fee of 0.25%)
+                profit_percent = ((self.highest_bid - (self.highest_bid * 0.0025)) / self.combined_buy.rate) - 1
+                log('Can sell ' + self.currency_pair + ' at a profit of ' + "{0:.2f}".format(profit_percent * 100) + '%')
+
+                if profit_percent < -self.new_order_threshold:
+                    log('Profit percent has fallen below the threshold', True)
+                    return self.open_new_position()
+                elif profit_percent > self.min_profit:
+                    return self.sell(amount)
             else:
-                main_amount, amount = self.calculate_sell_amount()
-                # 0.0001 is the min btc order amount
-                if main_amount > 0.0001:
-                    # sell rate / buy rate (assume a fee of 0.25%)
-                    profit_percent = ((self.highest_bid - (self.highest_bid * 0.0025)) / self.combined_order.rate) - 1
-
-                    # if the combined order was a buy
-                    if self.combined_order.is_buy():
-                        log('Can sell ' + self.currency_pair + ' at a profit percent of ' + "{0:.3f}".format(profit_percent))
-                        if profit_percent < -self.new_order_threshold:
-                            return self.open_new_position()
-                        elif profit_percent > self.min_profit:
-                            return self.sell(amount)
-
-                    # if the combined order was a sale and the price has gone up more than the threshold
-                    elif profit_percent > self.new_order_threshold:
-                        return self.open_new_position()
+                log('No previous buys to compare against', True)
+                self.open_new_position()
 
         elif can_buy:
-            if self.combined_order is None:
-                return self.open_new_position()
-            else:
-                main_amount, amount = self.calculate_buy_amount()
-                # 0.0001 is the min btc order amount
-                if main_amount > 0.0001:
+            main_amount, amount = self.calculate_buy_amount()
+            # 0.0001 is the min btc order amount
+            if main_amount > 0.0001:
+                if self.combined_sell is not None:
                     # sell rate / buy rate (assume a fee of 0.25%)
-                    profit_percent = (self.combined_order.rate / (self.lowest_ask + (self.lowest_ask * 0.0025))) - 1
+                    profit_percent = (self.combined_sell.rate / (self.lowest_ask + (self.lowest_ask * 0.0025))) - 1
+                    log('Can buy ' + self.currency_pair + ' at a profit of ' + "{0:.2f}".format(profit_percent * 100) + '%')
 
-                    # if the combined order was a sell
-                    if self.combined_order.is_sell():
-                        log('Can buy ' + self.currency_pair + ' at a profit percent of ' + "{0:.3f}".format(profit_percent))
-                        if profit_percent < -self.new_order_threshold:
-                            return self.open_new_position()
-                        elif profit_percent > self.min_profit:
-                            return self.buy(main_amount, amount)
-
-                    # if the combined order was a buy and the price has gone down more than the threshold
-                    elif profit_percent < -self.new_order_threshold:
+                    if profit_percent < -self.new_order_threshold:
+                        log('Profit percent has fallen below the threshold', True)
                         return self.open_new_position()
+                    elif profit_percent > self.min_profit:
+                        return self.buy(main_amount, amount)
+                elif self.combined_buy is None or -self.combined_buy.total < self.max_buy_order:
+                    log('No previous sells to compare against', True)
+                    self.open_new_position()
 
         return TradeResult.none
 
+    # make sure the minimum trade amount is reached
     def calculate_sell_amount(self):
-        amount = self.alt_balance * self.alt_percent
-        if self.combined_order is not None and self.combined_order.is_buy():
-            amount = min(self.alt_balance - self.min_alt, self.combined_order.amount)
-        main_amount = amount * self.highest_bid
+        min_trade_offset = 0.0
+        main_amount = 0.0
+        amount = 0.0
+        while main_amount < 0.0001 and self.alt_balance > 0:
+            amount = (self.alt_balance * (self.alt_percent + min_trade_offset))
+            main_amount = amount * self.highest_bid
+            min_trade_offset += 0.01  # keep going up by 1% until the minimum trade is reached
+
         return main_amount, amount
 
+    # make sure the minimum trade amount is reached
     def calculate_buy_amount(self):
-        main_amount = self.main_balance * self.main_percent
+        main_amount = max(self.main_balance * self.main_percent, 0.0001)
         amount = main_amount / self.lowest_ask
 
         return main_amount, amount
 
     def sell(self, amount):
-        if (self.alt_balance - amount) >= self.min_alt:
+        if (self.alt_balance - amount) >= self.min_alt and amount > 0:
             log('Selling ' + str(amount) + ' ' + self.currency_pair + ' at: ' + str(self.highest_bid), True)
             order = Trade().sell(self.poloniex, self.highest_bid, amount, self.currency_pair)
             if order is not None:
@@ -467,7 +486,7 @@ class MyTradeAlgorithm(ITradeAlgorithm):
                 log(str(datetime.now()) + ' - Sold ' + str(order.amount) + ' ' + self.currency_pair + ' for ' + str(order.total) + ' at ' + str(order.rate), True)
                 return TradeResult.success
         elif self.last_trade_type != TradeResult.failure:
-            log('Not enough funds in your ' + self.currency_pair + ' account!', True)
+            log('Not enough funds in your ' + self.currency_pair.split('_')[1] + ' account!', True)
 
         return TradeResult.failure
 
@@ -480,7 +499,7 @@ class MyTradeAlgorithm(ITradeAlgorithm):
                 log(str(datetime.now()) + ' - Bought ' + str(order.amount) + ' ' + self.currency_pair + ' for ' + str(order.total) + ' at ' + str(order.rate), True)
                 return TradeResult.success
         elif self.last_trade_type != TradeResult.failure:
-            log('Not enough funds in your ' + self.currency_pair + ' account!', True)
+            log('Not enough funds in your ' + self.currency_pair.split('_')[0] + ' account!', True)
 
         return TradeResult.failure
 
@@ -489,13 +508,10 @@ class MyTradeAlgorithm(ITradeAlgorithm):
         can_sell = False
 
         if self.ema1 > 0 and self.ema2 > 0:
-            # ignore areas where the ema's are on top of each other
-            ema_diff = abs(self.ema1 - self.ema2)
-            if ema_diff > self.ema_diff:
-                if self.highest_bid > max(self.ema1, self.ema2):
-                    can_sell = True
-                if self.lowest_ask < min(self.ema1, self.ema2):
-                    can_buy = True
+            if self.highest_bid > max(self.ema1, self.ema2):
+                can_sell = True
+            if self.lowest_ask < min(self.ema1, self.ema2):
+                can_buy = True
 
         return can_sell, can_buy
 
@@ -506,6 +522,11 @@ class MyTradeAlgorithm(ITradeAlgorithm):
         return sum(data[-window:]) / float(window)
 
     def ema(self, data):
+        if len(data) == 0:
+            return 0
+        elif len(data) == 1:
+            return data[0]
+
         window = int(len(data) / 2)
         c = 2.0 / (window + 1)
         current_ema = self.sma(data[-window * 2:-window], window)
