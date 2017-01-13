@@ -451,13 +451,8 @@ class MyTradeAlgorithm(ITradeAlgorithm):
 
     # make sure the minimum trade amount is reached
     def calculate_sell_amount(self):
-        min_trade_offset = 0.0
-        main_amount = 0.0
-        amount = 0.0
-        while main_amount < 0.0001 and self.alt_balance > 0:
-            amount = (self.alt_balance * (self.alt_percent + min_trade_offset))
-            main_amount = amount * self.highest_bid
-            min_trade_offset += 0.01  # keep going up by 1% until the minimum trade is reached
+        amount = self.alt_balance * self.alt_percent
+        main_amount = amount * self.highest_bid
 
         return main_amount, amount
 
