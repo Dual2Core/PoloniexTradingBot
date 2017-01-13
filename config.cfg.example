@@ -3,11 +3,11 @@ key = YOUR_API_KEY_HERE
 secret = YOUR_API_SECRET_HERE
 
 [CURRENCY]
-currency_pairs = USDT_BTC,BTC_ETH,BTC_XMR,BTC_FCT,BTC_ETC,BTC_LTC,BTC_ZEC,BTC_XRP,BTC_DASH,BTC_STR,BTC_MAID,BTC_SDC
+currency_pairs = USDT_BTC,BTC_ETH,BTC_XMR,BTC_FCT,BTC_ETC,BTC_LTC,BTC_ZEC,BTC_XRP,BTC_DASH,BTC_STR,BTC_MAID,BTC_SDC,BTC_DOGE
 
 [BOT]
 # (minutes) the number of minutes in between each update
-update_interval = 5
+update_interval = 7
 
 # (minutes) the number of minutes separating coin updates
 update_separation = 1
@@ -27,8 +27,8 @@ min_buy_profit = 10
 # (BTC) about $1.00 - when starting with a new currency don't keep buying after at least this much has been spent
 new_currency_threshold = 0.001
 
-# (%) if the profit loss is greater than this, open a new order (AKA "stop loss")
-new_order_threshold = 10
+# (%) if the profit loss is greater than this, open a new order
+new_order_threshold = 5
 
 # (BTC) reserve at least this much of the main currency
 min_main = 0.0005
@@ -43,7 +43,7 @@ trading_history = 43200
 [USDT_BTC]
 min_sell_profit = 20
 min_buy_profit = 20
-new_order_threshold = 40
+new_order_threshold = 10
 
 # Main is USD
 min_main = 0
