@@ -450,7 +450,7 @@ class MyTradeAlgorithm(ITradeAlgorithm):
                     elif profit_percent > self.min_buy_profit:
                         return self.buy(main_amount, amount, profit_percent)
                 elif self.combined_buy is None or -self.combined_buy.total < self.new_currency_threshold:
-                    log('No previous sells to compare against', True)
+                    log(self.currency_pair + ': No previous sells to compare against', True)
                     self.open_new_position()
 
         return TradeResult.none
