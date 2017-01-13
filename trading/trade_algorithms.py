@@ -1,6 +1,8 @@
 from trading import Poloniex, Trade, Order, OrderHistory
 from trading.logger import log
 from datetime import datetime, timedelta
+import time
+import random
 from enum import Enum
 
 
@@ -386,6 +388,9 @@ class MyTradeAlgorithm(ITradeAlgorithm):
             self.last_trade_type = self.trade_when_profitable()
         except Exception as e:
             log('an error occurred while updating from the server: ' + str(e.args), True)
+            # wait and try again
+            time.sleep(random.randrange(1, 5))
+            self.update()
 
     def open_new_position(self):
         can_sell, can_buy = self.can_buy_or_sell()
