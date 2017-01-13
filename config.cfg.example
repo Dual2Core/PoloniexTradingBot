@@ -7,10 +7,10 @@ currency_pairs = USDT_BTC,BTC_ETH,BTC_XMR,BTC_FCT,BTC_ETC,BTC_LTC,BTC_ZEC,BTC_XR
 
 [BOT]
 # (minutes) the number of minutes in between each update
-update_interval = 15
+update_interval = 6
 
 # (minutes) the number of minutes separating coin updates
-update_separation = 1
+update_separation = 0.5
 
 # (%) buy with % of main currency
 main_percent = 5
@@ -44,3 +44,9 @@ trading_history = 43200
 min_sell_profit = 20
 min_buy_profit = 20
 new_order_threshold = 40
+
+# Main is USD
+min_main = 0
+
+# ALT is BTC
+min_alt = 0.01
