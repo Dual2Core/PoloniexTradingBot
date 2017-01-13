@@ -13,13 +13,10 @@ class Trade:
 
     def buy(self, poloniex, rate, amount, currency_pair='BTC_LTC'):
         assert isinstance(poloniex, Poloniex)
-        # if self.buy_order is not None:
-        #     raise AssertionError('Cannot place more than one buy order for a trade')
 
         order = poloniex.buy(currencyPair=currency_pair, rate=rate, amount=amount)
         if 'error' in order:
-            log(order['error'], True)
-            return None
+            raise RuntimeError(order['error'])
         else:
             order_number = order['orderNumber']
             time.sleep(5)  # wait for the trade to propagate
@@ -29,15 +26,13 @@ class Trade:
 
     def sell(self, poloniex, rate, amount, currency_pair='BTC_LTC'):
         assert isinstance(poloniex, Poloniex)
-        # if self.sell_order is not None:
-        #     raise AssertionError('Cannot place more than one buy order for a trade')
 
         order = poloniex.sell(currencyPair=currency_pair, rate=rate, amount=amount)
         if 'error' in order:
-            log(order['error'], True)
-            return None
+            raise RuntimeError(order['error'])
         else:
             order_number = order['orderNumber']
+            time.sleep(5)  # wait for the trade to propagate
             self.sell_order = OrderHistory(poloniex, minutes=15, currency_pair=currency_pair).get_order(order_number)
 
             return self.sell_order

@@ -2,6 +2,7 @@ from trading import Poloniex, Trade, Order, OrderHistory
 from trading.trade_currency import TradeCurrency
 from trading.logger import log
 import random
+import time
 from datetime import datetime, timedelta
 from enum import Enum
 
