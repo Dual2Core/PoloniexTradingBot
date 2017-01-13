@@ -13,6 +13,8 @@ class TradeResult(Enum):
 class ITradeAlgorithm:
     poloniex = None
     currency_pair = ''
+    currency_main = ''
+    currency_alt = ''
     alt_percent = 0.0
     main_percent = 0.0
     min_buy_profit = 0.0
@@ -44,6 +46,10 @@ class ITradeAlgorithm:
         self.history_in_minutes = history_in_minutes
         self.currency_pair = currency_pair
         self.start_time = datetime.now()
+
+        cp_split = currency_pair.split('_')
+        self.currency_main = cp_split[0]
+        self.currency_alt = cp_split[1]
 
     def update(self):
         raise NotImplementedError()
@@ -171,12 +177,8 @@ class MyTradeAlgorithmOld(ITradeAlgorithm):
     def update_balances(self):
         balances = self.poloniex.returnBalances()
 
-        cp_split = self.currency_pair.split('_')
-        main_currency = cp_split[0]
-        alt_currency = cp_split[1]
-
-        self.main_balance = float(balances[main_currency])
-        self.alt_balance = float(balances[alt_currency])
+        self.main_balance = float(balances[self.currency_main])
+        self.alt_balance = float(balances[self.currency_alt])
 
     def update(self):
         try:
@@ -351,7 +353,7 @@ class MyTradeAlgorithm(ITradeAlgorithm):
     def update_chart_data(self):
         ticker = self.poloniex.returnTicker()
         if 'error' in ticker:
-            log(ticker['error'], True)
+            raise RuntimeError(ticker['error'])
         else:
             self.highest_bid = float(ticker[self.currency_pair]['highestBid'])
             self.lowest_ask = float(ticker[self.currency_pair]['lowestAsk'])
@@ -370,40 +372,36 @@ class MyTradeAlgorithm(ITradeAlgorithm):
         balances = self.poloniex.returnBalances()
 
         if 'error' in balances:
-            log(balances['error'], True)
+            raise RuntimeError(balances['error'])
         else:
-            cp_split = self.currency_pair.split('_')
-            main_currency = cp_split[0]
-            alt_currency = cp_split[1]
-
-            self.main_balance = float(balances[main_currency])
-            self.alt_balance = float(balances[alt_currency])
+            self.main_balance = float(balances[self.currency_main])
+            self.alt_balance = float(balances[self.currency_alt])
 
     def update(self):
         try:
-            try:
-                self.update_balances()
-                self.update_trade_history()
-                self.update_chart_data()
-            except Exception as e:
-                log('an error occurred while updating from the server: ' + str(e.args), True)
+            self.update_balances()
+            self.update_trade_history()
+            self.update_chart_data()
 
             self.last_trade_type = self.trade_when_profitable()
-
-        except AttributeError as e:
-            log(e.args)
+        except Exception as e:
+            log('an error occurred while updating from the server: ' + str(e.args), True)
 
     def open_new_position(self):
         can_sell, can_buy = self.can_buy_or_sell()
 
         if can_sell:
             main_amount, amount = self.calculate_sell_amount()
-            log('Opening a new sell order for ' + self.currency_pair, True)
+            if self.last_trade_type != TradeResult.failure:
+                log('Attempting to open a new sell order for ' + self.currency_pair, True)
             return self.sell(amount, 0)
         elif can_buy:
             main_amount, amount = self.calculate_buy_amount()
-            log('Opening a new buy order for ' + self.currency_pair, True)
+            if self.last_trade_type != TradeResult.failure:
+                log('Attempting to open a new buy order for ' + self.currency_pair, True)
             return self.buy(main_amount, amount, 0)
+
+        return TradeResult.none
 
     def trade_when_profitable(self):
         can_sell, can_buy = self.can_buy_or_sell()
@@ -421,7 +419,8 @@ class MyTradeAlgorithm(ITradeAlgorithm):
                 elif profit_percent > self.min_sell_profit:
                     return self.sell(amount, profit_percent)
             else:
-                log(self.currency_pair + ': No previous buys to compare against', True)
+                if self.last_trade_type != TradeResult.failure:
+                    log(self.currency_pair + ': No previous buys to compare against', True)
                 self.open_new_position()
 
         elif can_buy:
@@ -439,7 +438,8 @@ class MyTradeAlgorithm(ITradeAlgorithm):
                     elif profit_percent > self.min_buy_profit:
                         return self.buy(main_amount, amount, profit_percent)
                 elif self.combined_buy is None or -self.combined_buy.total < self.new_currency_threshold:
-                    log(self.currency_pair + ': No previous sells to compare against', True)
+                    if self.last_trade_type != TradeResult.failure:
+                        log(self.currency_pair + ': No previous sells to compare against', True)
                     self.open_new_position()
 
         return TradeResult.none
@@ -465,29 +465,31 @@ class MyTradeAlgorithm(ITradeAlgorithm):
 
     def sell(self, amount, profit_percent):
         if (self.alt_balance - amount) >= self.min_alt and amount > 0:
-            log('Selling ' + str(amount) + ' ' + self.currency_pair + ' at: ' + str(self.highest_bid), True)
+            log('Selling ' + str(amount) + self.currency_alt + ' at a rate of ' + str(self.highest_bid) + self.currency_main, True)
             order = Trade().sell(self.poloniex, self.highest_bid, amount, self.currency_pair)
             if order is not None:
                 assert isinstance(order, Order)
-                log(str(datetime.now()) + ' - Sold ' + str(order.amount) + ' ' + self.currency_pair + ' for ' + str(
-                    order.total) + ' at ' + str(order.rate) + ' for a ' + "{0:.2f}".format(profit_percent * 100) + '% profit', True)
+                log(str(datetime.now()) + ' - Sold ' + str(order.amount) + self.currency_alt + ' for ' + str(
+                    order.total) + self.currency_main + ' at ' + str(order.rate) + self.currency_main + ' for a ' + "{0:.2f}".format(profit_percent * 100) + '% profit', True)
                 return TradeResult.success
         elif self.last_trade_type != TradeResult.failure:
-            log('Not enough funds in your ' + self.currency_pair.split('_')[1] + ' account!', True)
+            if self.last_trade_type != TradeResult.failure:
+                log('Not enough funds in your ' + self.currency_alt + ' account! You need at least ' + str(self.min_alt) + self.currency_alt, True)
 
         return TradeResult.failure
 
     def buy(self, main_amount, amount, profit_percent):
         if (self.main_balance - main_amount) >= self.min_main:
-            log('Buying ' + str(amount) + ' ' + self.currency_pair + ' at: ' + str(self.lowest_ask), True)
+            log('Buying ' + str(amount) + self.currency_alt + ' at a rate of ' + str(self.lowest_ask) + self.currency_main, True)
             order = Trade().buy(self.poloniex, self.lowest_ask, amount, self.currency_pair)
             if order is not None:
                 assert isinstance(order, Order)
-                log(str(datetime.now()) + ' - Bought ' + str(order.amount) + ' ' + self.currency_pair + ' for ' + str(
-                    order.total) + ' at ' + str(order.rate) + ' for a ' + "{0:.2f}".format(profit_percent * 100) + '% profit', True)
+                log(str(datetime.now()) + ' - Bought ' + str(order.amount) + self.currency_alt + ' for ' + str(
+                    order.total) + self.currency_main + ' at ' + str(order.rate) + self.currency_main + ' for a ' + "{0:.2f}".format(profit_percent * 100) + '% profit', True)
                 return TradeResult.success
         elif self.last_trade_type != TradeResult.failure:
-            log('Not enough funds in your ' + self.currency_pair.split('_')[0] + ' account!', True)
+            if self.last_trade_type != TradeResult.failure:
+                log('Not enough funds in your ' + self.currency_main + ' account! You need at least ' + str(self.min_main) + self.currency_main, True)
 
         return TradeResult.failure
 
