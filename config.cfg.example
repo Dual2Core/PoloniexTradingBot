@@ -3,7 +3,7 @@ key = YOUR_API_KEY_HERE
 secret = YOUR_API_SECRET_HERE
 
 [CURRENCY]
-currency_pairs = BTC_USDT,BTC_ETH,BTC_XMR,BTC_FCT,BTC_ETC,BTC_LTC,BTC_ZEC,BTC_XRP,BTC_DASH,BTC_STR,BTC_MAID,BTC_SDC
+currency_pairs = USDT_BTC,BTC_ETH,BTC_XMR,BTC_FCT,BTC_ETC,BTC_LTC,BTC_ZEC,BTC_XRP,BTC_DASH,BTC_STR,BTC_MAID,BTC_SDC
 
 [BOT]
 # (minutes) the number of minutes in between each update
@@ -40,7 +40,7 @@ min_alt = 0.0
 trading_history = 43200
 
 
-[BTC_USDT]
+[USDT_BTC]
 min_sell_profit = 20
 min_buy_profit = 20
 new_order_threshold = 40
