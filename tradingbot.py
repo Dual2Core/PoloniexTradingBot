@@ -66,12 +66,12 @@ def load_config():
                            trading_history_in_minutes=dft_tc.trading_history_in_minutes)
         # custom values
         if pair in cfg:
-            tc.main_percent = float(cfg[pair][main_percent] if main_percent in cfg[pair] else tc.main_percent)
-            tc.alt_percent = float(cfg[pair][alt_percent] if alt_percent in cfg[pair] else tc.alt_percent)
-            tc.min_buy_profit = float(cfg[pair][min_buy_profit] if min_buy_profit in cfg[pair] else tc.min_buy_profit)
-            tc.min_sell_profit = float(cfg[pair][min_sell_profit] if min_sell_profit in cfg[pair] else tc.min_sell_profit)
+            tc.main_percent = float(cfg[pair][main_percent] if main_percent in cfg[pair] else tc.main_percent) / 100.0
+            tc.alt_percent = float(cfg[pair][alt_percent] if alt_percent in cfg[pair] else tc.alt_percent) / 100.0
+            tc.min_buy_profit = float(cfg[pair][min_buy_profit] if min_buy_profit in cfg[pair] else tc.min_buy_profit) / 100.0
+            tc.min_sell_profit = float(cfg[pair][min_sell_profit] if min_sell_profit in cfg[pair] else tc.min_sell_profit) / 100.0
             tc.new_currency_threshold = float(cfg[pair][new_currency_threshold] if new_currency_threshold in cfg[pair] else tc.new_currency_threshold)
-            tc.new_order_threshold = float(cfg[pair][new_order_threshold] if new_order_threshold in cfg[pair] else tc.new_order_threshold)
+            tc.new_order_threshold = float(cfg[pair][new_order_threshold] if new_order_threshold in cfg[pair] else tc.new_order_threshold) / 100.0
             tc.min_main = float(cfg[pair][min_main] if min_main in cfg[pair] else tc.min_main)
             tc.min_alt = float(cfg[pair][min_alt] if min_alt in cfg[pair] else tc.min_alt)
             tc.trading_history_in_minutes = float(cfg[pair][trading_history] if trading_history in cfg[pair] else tc.trading_history_in_minutes)
