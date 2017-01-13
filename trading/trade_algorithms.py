@@ -416,7 +416,12 @@ class MyTradeAlgorithm(ITradeAlgorithm):
             if self.combined_buy is not None:
                 # sell rate / buy rate (assume a fee of 0.25%)
                 profit_percent = ((self.highest_bid - (self.highest_bid * 0.0025)) / self.combined_buy.rate) - 1
-                log('Can sell ' + self.currency_pair + ' at a profit of ' + "{0:.2f}".format(profit_percent * 100) + '% / ' + "{0:.2f}".format(self.min_sell_profit * 100) + '%')
+                if profit_percent > 0:
+                    log('Can sell ' + self.currency_pair + ' at a profit of ' + "{0:.2f}".format(
+                        profit_percent * 100) + '% / ' + "{0:.2f}".format(self.min_sell_profit * 100) + '%')
+                else:
+                    log('Can sell ' + self.currency_pair + ' at a loss of ' + "{0:.2f}".format(
+                        profit_percent * 100) + '% / ' + "{0:.2f}".format(self.new_order_threshold * -100) + '%')
 
                 if profit_percent < -self.new_order_threshold:
                     log('Profit percent has fallen below the threshold', True)
@@ -435,7 +440,12 @@ class MyTradeAlgorithm(ITradeAlgorithm):
                 if self.combined_sell is not None:
                     # sell rate / buy rate (assume a fee of 0.25%)
                     profit_percent = (self.combined_sell.rate / (self.lowest_ask + (self.lowest_ask * 0.0025))) - 1
-                    log('Can buy ' + self.currency_pair + ' at a profit of ' + "{0:.2f}".format(profit_percent * 100) + '% / ' + "{0:.2f}".format(self.min_buy_profit * 100) + '%')
+                    if profit_percent > 0:
+                        log('Can buy ' + self.currency_pair + ' at a profit of ' + "{0:.2f}".format(
+                            profit_percent * 100) + '% / ' + "{0:.2f}".format(self.min_buy_profit * 100) + '%')
+                    else:
+                        log('Can buy ' + self.currency_pair + ' at a loss of ' + "{0:.2f}".format(
+                            profit_percent * 100) + '% / ' + "{0:.2f}".format(self.new_order_threshold * -100) + '%')
 
                     if profit_percent < -self.new_order_threshold:
                         log('Profit percent has fallen below the threshold', True)
