@@ -426,7 +426,7 @@ class MyTradeAlgorithm(ITradeAlgorithm):
             else:
                 if self.last_trade_type != TradeResult.failure:
                     log(self.currency_pair + ': No previous buys to compare against', True)
-                self.open_new_position()
+                return self.open_new_position()
 
         elif can_buy:
             main_amount, amount = self.calculate_buy_amount()
@@ -445,7 +445,7 @@ class MyTradeAlgorithm(ITradeAlgorithm):
                 elif self.combined_buy is None or -self.combined_buy.total < self.new_currency_threshold:
                     if self.last_trade_type != TradeResult.failure:
                         log(self.currency_pair + ': No previous sells to compare against', True)
-                    self.open_new_position()
+                    return self.open_new_position()
 
         return TradeResult.none
 
