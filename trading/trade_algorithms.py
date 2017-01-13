@@ -348,12 +348,6 @@ class MyTradeAlgorithm(ITradeAlgorithm):
         if self.combined_sell is not None:
             self.combined_sell.rate = self.ema(sell_order_rates)
 
-        if self.combined_buy is not None and self.combined_sell is not None:
-            if abs(self.combined_buy.amount + self.combined_sell.amount) <= (self.alt_balance * self.alt_percent):
-                log('Combined buys and sells cancel each other for ' + self.currency_pair, True)
-                self.combined_buy = None
-                self.combined_sell = None
-
     def update_chart_data(self):
         ticker = self.poloniex.returnTicker()
         if 'error' in ticker:
@@ -362,20 +356,15 @@ class MyTradeAlgorithm(ITradeAlgorithm):
             self.highest_bid = float(ticker[self.currency_pair]['highestBid'])
             self.lowest_ask = float(ticker[self.currency_pair]['lowestAsk'])
 
-            start1 = datetime.now() + timedelta(hours=2)
-            start2 = datetime.now() + timedelta(hours=4)
-            scd = self.poloniex.returnChartData(currencyPair=self.currency_pair, period=300, start=start1)
-            lcd = self.poloniex.returnChartData(currencyPair=self.currency_pair, period=300, start=start2)
+            start = datetime.now() - timedelta(hours=16)
+            chart_data = self.poloniex.returnChartData(currencyPair=self.currency_pair, period=300, start=start)
 
-            ma1 = []
-            ma2 = []
-            for data in scd:
-                ma1.append(data['weightedAverage'])
-            for data in lcd:
-                ma2.append(data['weightedAverage'])
+            ma = []
+            for data in chart_data:
+                ma.append(data['weightedAverage'])
 
-            self.ema1 = self.ema(ma1)  # self.sma(ma1, len(ma1))
-            self.ema2 = self.ema(ma2)
+            self.ema1 = self.ema(ma, int(len(ma) / 2))
+            self.ema2 = self.ema(ma, int(len(ma) / 4))
 
     def update_balances(self):
         balances = self.poloniex.returnBalances()
@@ -438,7 +427,7 @@ class MyTradeAlgorithm(ITradeAlgorithm):
         elif can_buy:
             main_amount, amount = self.calculate_buy_amount()
             # 0.0001 is the min btc order amount
-            if main_amount > 0.0001:
+            if main_amount >= 0.0001:
                 if self.combined_sell is not None:
                     # sell rate / buy rate (assume a fee of 0.25%)
                     profit_percent = (self.combined_sell.rate / (self.lowest_ask + (self.lowest_ask * 0.0025))) - 1
@@ -511,6 +500,8 @@ class MyTradeAlgorithm(ITradeAlgorithm):
                 can_sell = True
             if self.lowest_ask < min(self.ema1, self.ema2):
                 can_buy = True
+        else:
+            log('Error! ema value is not greater than zero', True)
 
         return can_sell, can_buy
 
@@ -520,13 +511,15 @@ class MyTradeAlgorithm(ITradeAlgorithm):
             return None
         return sum(data[-window:]) / float(window)
 
-    def ema(self, data):
+    def ema(self, data, window=-1):
         if len(data) == 0:
             return 0
         elif len(data) == 1:
             return data[0]
 
-        window = int(len(data) / 2)
+        if window < 0:
+            window = int(len(data) / 2)
+
         c = 2.0 / (window + 1)
         current_ema = self.sma(data[-window * 2:-window], window)
         for value in data[-window:]:

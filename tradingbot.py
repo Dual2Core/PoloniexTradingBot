@@ -50,7 +50,7 @@ def load_config():
                            new_order_threshold=float(cfg['BOT'][new_order_threshold]) / 100.0,
                            min_main=float(cfg['BOT'][min_main]),
                            min_alt=float(cfg['BOT'][min_alt]),
-                           trading_history_in_minutes=int(cfg['BOT'][trading_history]))
+                           trading_history_in_minutes=float(cfg['BOT'][trading_history]))
 
     for pair in currency_pairs:
         # initialize with defaults
@@ -66,15 +66,15 @@ def load_config():
                            trading_history_in_minutes=dft_tc.trading_history_in_minutes)
         # custom values
         if pair in cfg:
-            tc.main_percent = cfg[pair][main_percent] if main_percent in cfg[pair] else tc.main_percent
-            tc.alt_percent = cfg[pair][alt_percent] if alt_percent in cfg[pair] else tc.alt_percent
-            tc.min_buy_profit = cfg[pair][min_buy_profit] if min_buy_profit in cfg[pair] else tc.min_buy_profit
-            tc.min_sell_profit = cfg[pair][min_sell_profit] if min_sell_profit in cfg[pair] else tc.min_sell_profit
-            tc.new_currency_threshold = cfg[pair][new_currency_threshold] if new_currency_threshold in cfg[pair] else tc.new_currency_threshold
-            tc.new_order_threshold = cfg[pair][new_order_threshold] if new_order_threshold in cfg[pair] else tc.new_order_threshold
-            tc.min_main = cfg[pair][min_main] if min_main in cfg[pair] else tc.min_main
-            tc.min_alt = cfg[pair][min_alt] if min_alt in cfg[pair] else tc.min_alt
-            tc.trading_history_in_minutes = cfg[pair][trading_history] if trading_history in cfg[pair] else tc.trading_history_in_minutes
+            tc.main_percent = float(cfg[pair][main_percent] if main_percent in cfg[pair] else tc.main_percent)
+            tc.alt_percent = float(cfg[pair][alt_percent] if alt_percent in cfg[pair] else tc.alt_percent)
+            tc.min_buy_profit = float(cfg[pair][min_buy_profit] if min_buy_profit in cfg[pair] else tc.min_buy_profit)
+            tc.min_sell_profit = float(cfg[pair][min_sell_profit] if min_sell_profit in cfg[pair] else tc.min_sell_profit)
+            tc.new_currency_threshold = float(cfg[pair][new_currency_threshold] if new_currency_threshold in cfg[pair] else tc.new_currency_threshold)
+            tc.new_order_threshold = float(cfg[pair][new_order_threshold] if new_order_threshold in cfg[pair] else tc.new_order_threshold)
+            tc.min_main = float(cfg[pair][min_main] if min_main in cfg[pair] else tc.min_main)
+            tc.min_alt = float(cfg[pair][min_alt] if min_alt in cfg[pair] else tc.min_alt)
+            tc.trading_history_in_minutes = float(cfg[pair][trading_history] if trading_history in cfg[pair] else tc.trading_history_in_minutes)
 
         trade_items.append(tc)
 
