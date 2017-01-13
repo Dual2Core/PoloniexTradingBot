@@ -27,7 +27,7 @@ min_buy_profit = 10
 # (BTC) about $1.00 - when starting with a new currency don't keep buying after at least this much has been spent
 new_currency_threshold = 0.001
 
-# (%) if the profit loss is greater than this, open a new order
+# (%) if the profit loss is greater than this, open a new order (AKA "stop loss")
 new_order_threshold = 10
 
 # (BTC) reserve at least this much of the main currency
