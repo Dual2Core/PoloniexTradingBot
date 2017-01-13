@@ -3,11 +3,11 @@ key = YOUR_API_KEY_HERE
 secret = YOUR_API_SECRET_HERE
 
 [CURRENCY]
-currency_pairs = BTC_ETH,BTC_XMR,BTC_FCT,BTC_ETC,BTC_LTC,BTC_ZEC,BTC_XRP,BTC_DASH,BTC_STR,BTC_MAID,BTC_SDC
+currency_pairs = BTC_USDT,BTC_ETH,BTC_XMR,BTC_FCT,BTC_ETC,BTC_LTC,BTC_ZEC,BTC_XRP,BTC_DASH,BTC_STR,BTC_MAID,BTC_SDC
 
 [BOT]
 # (minutes) the number of minutes in between each update
-update_interval = 10
+update_interval = 15
 
 # (minutes) the number of minutes separating coin updates
 update_separation = 1
@@ -19,10 +19,10 @@ main_percent = 5
 alt_percent = 10
 
 # (%) the percent change in BTC price since the last buy trade (long profit)
-min_sell_profit = 6
+min_sell_profit = 10
 
 # (%) the percent change in BTC price since the last sell trade (short profit)
-min_buy_profit = 5
+min_buy_profit = 10
 
 # (BTC) about $1.00 - when starting with a new currency don't keep buying after at least this much has been spent
 new_currency_threshold = 0.001
@@ -36,5 +36,11 @@ min_main = 0.0005
 # (ALT) reserve at least this much of the alt currency
 min_alt = 0.0
 
-# (minutes) gather 1 year of trading history for decision making (60 * 24 * 365 * 1)
-trading_history = 525600
+# (minutes) gather 1 month of trading history for decision making (60 * 24 * 30 * 1)
+trading_history = 43200
+
+
+[BTC_USDT]
+min_sell_profit = 20
+min_buy_profit = 20
+new_order_threshold = 40
