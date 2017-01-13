@@ -212,31 +212,31 @@ class MyTradeAlgorithm(ITradeAlgorithm):
 
     def sell(self, amount, profit_percent):
         if (self.alt_balance - amount) >= self.currency.min_alt and amount > 0:
-            log('Selling ' + str(amount) + self.currency_alt + ' at a rate of ' + str(self.highest_bid) + self.currency_main, True)
+            log('Selling ' + str(amount) + ' ' + self.currency_alt + ' at a rate of ' + str(self.highest_bid) + ' ' + self.currency_main, True)
             order = Trade().sell(self.poloniex, self.highest_bid, amount, self.currency.currency_pair)
             if order is not None:
                 assert isinstance(order, Order)
-                log(str(datetime.now()) + ' - Sold ' + str(order.amount) + self.currency_alt + ' for ' + str(
-                    order.total) + self.currency_main + ' at ' + str(order.rate) + self.currency_main + ' for a ' + "{0:.2f}".format(profit_percent * 100) + '% profit', True)
+                log(str(datetime.now()) + ' - Sold ' + str(order.amount) + ' ' + self.currency_alt + ' for ' + str(
+                    order.total) + ' ' + self.currency_main + ' at ' + str(order.rate) + ' ' + self.currency_main + ' for a ' + "{0:.2f}".format(profit_percent * 100) + '% profit', True)
                 return TradeResult.success
         elif self.last_trade_type != TradeResult.failure:
             if self.last_trade_type != TradeResult.failure:
-                log('Not enough funds in your ' + self.currency_alt + ' account! You need at least ' + str(self.currency.min_alt) + self.currency_alt, True)
+                log('Not enough funds in your ' + ' ' + self.currency_alt + ' account! You need at least ' + str(self.currency.min_alt) + ' ' + self.currency_alt, True)
 
         return TradeResult.failure
 
     def buy(self, main_amount, amount, profit_percent):
         if (self.main_balance - main_amount) >= self.currency.min_main:
-            log('Buying ' + str(amount) + self.currency_alt + ' at a rate of ' + str(self.lowest_ask) + self.currency_main, True)
+            log('Buying ' + str(amount) + ' ' + self.currency_alt + ' at a rate of ' + str(self.lowest_ask) + ' ' + self.currency_main, True)
             order = Trade().buy(self.poloniex, self.lowest_ask, amount, self.currency.currency_pair)
             if order is not None:
                 assert isinstance(order, Order)
-                log(str(datetime.now()) + ' - Bought ' + str(order.amount) + self.currency_alt + ' for ' + str(
-                    order.total) + self.currency_main + ' at ' + str(order.rate) + self.currency_main + ' for a ' + "{0:.2f}".format(profit_percent * 100) + '% profit', True)
+                log(str(datetime.now()) + ' - Bought ' + str(order.amount) + ' ' + self.currency_alt + ' for ' + str(
+                    order.total) +  ' ' + self.currency_main + ' at ' + str(order.rate) + ' ' + self.currency_main + ' for a ' + "{0:.2f}".format(profit_percent * 100) + '% profit', True)
                 return TradeResult.success
         elif self.last_trade_type != TradeResult.failure:
             if self.last_trade_type != TradeResult.failure:
-                log('Not enough funds in your ' + self.currency_main + ' account! You need at least ' + str(self.currency.min_main) + self.currency_main, True)
+                log('Not enough funds in your ' + ' ' + self.currency_main + ' account! You need at least ' + str(self.currency.min_main) + ' ' + self.currency_main, True)
 
         return TradeResult.failure
 

@@ -7,22 +7,22 @@ currency_pairs = USDT_BTC,BTC_ETH,BTC_XMR,BTC_FCT,BTC_ETC,BTC_LTC,BTC_ZEC,BTC_XR
 
 [BOT]
 # (minutes) the number of minutes in between each update
-update_interval = 3
+update_interval = 4
 
 # (minutes) the number of minutes separating coin updates
 update_separation = 0.5
 
 # (%) buy with % of main currency
-main_percent = 5
+main_percent = 1.5
 
 # (%) sell with % of alt currency
-alt_percent = 15
+alt_percent = 25
 
 # (%) the percent change in BTC price since the last buy trade (long profit)
-min_sell_profit = 7.5
+min_sell_profit = 9.5
 
 # (%) the percent change in BTC price since the last sell trade (short profit)
-min_buy_profit = 7.5
+min_buy_profit = 10.5
 
 # (BTC) about $1.00 - when starting with a new currency don't keep buying after at least this much has been spent
 new_currency_threshold = 0.001
