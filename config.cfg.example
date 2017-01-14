@@ -56,7 +56,7 @@ initial_sell_rate = 0
 
 
 # ----------------------------------------------------
-# specify default settings for BTC pairs here
+# specify default settings for USDT pairs here
 # ----------------------------------------------------
 
 [USDT]
