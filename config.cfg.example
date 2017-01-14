@@ -5,7 +5,7 @@ secret = YOUR_API_SECRET_HERE
 
 
 [CURRENCY]
-currency_pairs = USDT_BTC,BTC_ETH,BTC_XMR,BTC_FCT,BTC_ETC,BTC_LTC,BTC_ZEC,BTC_XRP,BTC_DASH,BTC_STR,BTC_MAID,BTC_SDC,BTC_DOGE
+currency_pairs = USDT_BTC,BTC_ETH,BTC_XMR,BTC_FCT,BTC_ETC,BTC_LTC,BTC_ZEC,BTC_XRP,BTC_DASH,BTC_STR,BTC_MAID,BTC_DCR,BTC_REP,BTC_SDC,BTC_DOGE
 
 
 
@@ -15,10 +15,7 @@ currency_pairs = USDT_BTC,BTC_ETH,BTC_XMR,BTC_FCT,BTC_ETC,BTC_LTC,BTC_ZEC,BTC_XR
 
 [BOT]
 # (minutes) the number of minutes in between each update
-update_interval = 4
-
-# (minutes) the number of minutes separating coin updates
-update_separation = 0.3
+update_interval = 10
 
 # (%) buy with % of main currency
 main_percent = 1.5
@@ -27,16 +24,16 @@ main_percent = 1.5
 alt_percent = 10
 
 # (%) the percent change in BTC price since the last buy trade (long profit)
-min_sell_profit = 9.5
+min_sell_profit = 20
 
 # (%) the percent change in BTC price since the last sell trade (short profit)
-min_buy_profit = 10.5
+min_buy_profit = 20
 
 # (BTC) about $1.00 - when starting with a new currency don't keep buying after at least this much has been spent
 new_currency_threshold = 0.001
 
 # (%) if the profit loss is greater than this, open a new order
-new_order_threshold = 5
+new_order_threshold = 20
 
 # (BTC) reserve at least this much of the main currency
 min_main = 0.0005
@@ -62,21 +59,21 @@ initial_sell_rate = 0
 # Main is USDT
 # ALT is BTC
 [USDT_BTC]
-min_sell_profit = 15
-min_buy_profit = 15
-new_order_threshold = 10
+min_sell_profit = 25
+min_buy_profit = 25
+new_order_threshold = 20
 main_percent = 10
 alt_percent = 5
 min_main = 0
 min_alt = 0.01
 
 
+[BTC_SDC]
+# min_alt = 5.0
+min_sell_profit = 35
+min_buy_profit = 30
 
-[BTC_DASH]
-min_sell_profit = 10
-min_buy_profit = 10
 
+[BTC_XRP]
+min_alt = 4000.0
 
-
-[BTC_DOGE]
-initial_sell_rate = 0.00000026
