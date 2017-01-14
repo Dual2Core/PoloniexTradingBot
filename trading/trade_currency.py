@@ -3,7 +3,6 @@ class TradeCurrency:
     main_percent = 0.0
     min_buy_profit = 0.0
     min_sell_profit = 0.0
-    new_currency_threshold = 0.0
     new_order_threshold = 0.0
     trading_history_in_minutes = 0
     currency_pair = ''
@@ -17,7 +16,6 @@ class TradeCurrency:
                  main_percent,
                  min_buy_profit,
                  min_sell_profit,
-                 new_currency_threshold,
                  new_order_threshold,
                  min_main,
                  min_alt,
@@ -29,7 +27,6 @@ class TradeCurrency:
         self.main_percent = main_percent
         self.min_buy_profit = min_buy_profit
         self.min_sell_profit = min_sell_profit
-        self.new_currency_threshold = new_currency_threshold
         self.new_order_threshold = new_order_threshold
         self.min_main = min_main
         self.min_alt = min_alt
@@ -46,7 +43,6 @@ class TradeCurrency:
                             main_percent=tc.main_percent,
                             min_buy_profit=tc.min_buy_profit,
                             min_sell_profit=tc.min_sell_profit,
-                            new_currency_threshold=tc.new_currency_threshold,
                             new_order_threshold=tc.new_order_threshold,
                             min_main=tc.min_main,
                             min_alt=tc.min_alt,
