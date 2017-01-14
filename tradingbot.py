@@ -1,24 +1,25 @@
+import threading
 from threading import Timer
 
-import time
 from datetime import datetime
 
-from trading import Poloniex, ITradeAlgorithm, MyTradeAlgorithm, TradeCurrency, log
-
 from configparser import ConfigParser
+
+from trading import Poloniex, ITradeAlgorithm, MyTradeAlgorithm, TradeCurrency, log
 
 
 api_key = ''
 api_secret = ''
 
 update_interval = 0
-update_separation = 0
 
 trade_currencies = []
 
+lock = threading.Lock()
+
 
 def load_config():
-    global api_key, api_secret, update_interval, update_separation, trade_currencies
+    global api_key, api_secret, update_interval, trade_currencies
 
     cfg = ConfigParser()
     cfg.read('config.cfg')
@@ -27,7 +28,6 @@ def load_config():
     api_secret = cfg['API']['secret']
 
     update_interval = float(cfg['BOT']['update_interval']) * 60
-    update_separation = float(cfg['BOT']['update_separation']) * 60
 
     currency_pairs = cfg['CURRENCY']['currency_pairs'].split(',')
 
@@ -79,11 +79,15 @@ def load_config():
 
 
 def update_loop(algorithm):
-    assert isinstance(algorithm, ITradeAlgorithm)
-    algorithm.update()
+    with lock:
+        assert isinstance(algorithm, ITradeAlgorithm)
+        try:
+            algorithm.update()
+        except Exception as e:
+            log('An error occured: ' + str(e.args), True)
 
-    loop = Timer(update_interval, update_loop, [algorithm])
-    loop.start()
+        loop = Timer(update_interval, update_loop, [algorithm])
+        loop.start()
 
 
 def main():
@@ -97,7 +101,6 @@ def main():
         for currency in trade_currencies:
             algorithm = MyTradeAlgorithm(poloniex, currency)
             update_loop(algorithm)
-            time.sleep(update_separation)  # separate each coin loop
     except KeyboardInterrupt:
         quit()
 

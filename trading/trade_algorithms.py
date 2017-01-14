@@ -45,6 +45,13 @@ class MyTradeAlgorithm(ITradeAlgorithm):
     combined_sell = None
     last_trade_type = TradeResult.none
 
+    def update(self):
+            self.update_balances()
+            self.update_trade_history()
+            self.update_chart_data()
+
+            self.last_trade_type = self.trade_when_profitable()
+
     def update_trade_history(self):
         time_diff = datetime.now() - self.start_time
         minutes = self.currency.trading_history_in_minutes + (time_diff.total_seconds() / 60.0)
@@ -68,14 +75,14 @@ class MyTradeAlgorithm(ITradeAlgorithm):
         if self.combined_buy is not None:
             self.combined_buy.rate = self.ema(buy_order_rates)
         elif self.currency.initial_buy_rate > 0:
-            log(self.currency.currency_pair + ': No previous buys. Using initial rate of ' + str(self.currency.initial_buy_rate) + self.c, True)
+            log(self.currency.currency_pair + ': No previous buys. Using initial rate of ' + str(self.currency.initial_buy_rate) + ' ' + self.currency_main)
             self.combined_buy = Order.from_currency_pair('buy', self.currency.currency_pair)
             self.combined_buy.rate = self.currency.initial_buy_rate
 
         if self.combined_sell is not None:
             self.combined_sell.rate = self.ema(sell_order_rates)
         elif self.currency.initial_sell_rate > 0:
-            log(self.currency.currency_pair + ': No previous sells. Using initial rate of ' + str(self.currency.initial_sell_rate), True)
+            log(self.currency.currency_pair + ': No previous sells. Using initial rate of ' + str(self.currency.initial_sell_rate))
             self.combined_sell = Order.from_currency_pair('sell', self.currency.currency_pair)
             self.combined_sell.rate = self.currency.initial_sell_rate
 
@@ -105,19 +112,6 @@ class MyTradeAlgorithm(ITradeAlgorithm):
         else:
             self.main_balance = float(balances[self.currency_main])
             self.alt_balance = float(balances[self.currency_alt])
-
-    def update(self):
-        try:
-            self.update_balances()
-            self.update_trade_history()
-            self.update_chart_data()
-
-            self.last_trade_type = self.trade_when_profitable()
-        except Exception as e:
-            log('an error occurred while updating from the server: ' + str(e.args), True)
-            # wait and try again
-            time.sleep(random.randrange(1, 5))
-            self.update()
 
     def open_new_position(self):
         can_sell, can_buy = self.can_buy_or_sell()
@@ -222,7 +216,7 @@ class MyTradeAlgorithm(ITradeAlgorithm):
                 return TradeResult.success
         elif self.last_trade_type != TradeResult.failure:
             if self.last_trade_type != TradeResult.failure:
-                log('Not enough funds in your ' + ' ' + self.currency_alt + ' account! You need at least ' + str(self.currency.min_alt) + ' ' + self.currency_alt, True)
+                log('Not enough funds in your ' + self.currency_alt + ' account! You need at least ' + str(self.currency.min_alt) + ' ' + self.currency_alt, True)
 
         return TradeResult.failure
 
@@ -233,11 +227,11 @@ class MyTradeAlgorithm(ITradeAlgorithm):
             if order is not None:
                 assert isinstance(order, Order)
                 log(str(datetime.now()) + ' - Bought ' + str(order.amount) + ' ' + self.currency_alt + ' for ' + str(
-                    order.total) +  ' ' + self.currency_main + ' at ' + str(order.rate) + ' ' + self.currency_main + ' for a ' + "{0:.2f}".format(profit_percent * 100) + '% profit', True)
+                    order.total) + ' ' + self.currency_main + ' at ' + str(order.rate) + ' ' + self.currency_main + ' for a ' + "{0:.2f}".format(profit_percent * 100) + '% profit', True)
                 return TradeResult.success
         elif self.last_trade_type != TradeResult.failure:
             if self.last_trade_type != TradeResult.failure:
-                log('Not enough funds in your ' + ' ' + self.currency_main + ' account! You need at least ' + str(self.currency.min_main) + ' ' + self.currency_main, True)
+                log('Not enough funds in your ' + self.currency_main + ' account! You need at least ' + str(self.currency.min_main) + ' ' + self.currency_main, True)
 
         return TradeResult.failure
 
