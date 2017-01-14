@@ -78,8 +78,8 @@ def load_config():
 
     update_interval = float(cfg['PROCESS']['update_interval']) * 60
 
-    btc_pairs = cfg['CURRENCY']['btc_pairs'].split(',')
-    usdt_pairs = cfg['CURRENCY']['usdt_pairs'].split(',')
+    btc_pairs = cfg['CURRENCY']['btc_pairs'].split(',') if 'btc_pairs' in cfg['CURRENCY'] else []
+    usdt_pairs = cfg['CURRENCY']['usdt_pairs'].split(',') if 'usdt_pairs' in cfg['CURRENCY'] else []
 
     dft_tc_btc = load_defaults(cfg, 'BTC')
     dft_tc_usdt = load_defaults(cfg, 'USDT')
