@@ -138,7 +138,7 @@ class MyTradeAlgorithm(ITradeAlgorithm):
                 # sell rate / buy rate (assume a fee of 0.25%)
                 profit_percent = ((self.highest_bid - (self.highest_bid * 0.0025)) / self.combined_buy.rate) - 1
                 make_sell = profit_percent > self.currency.min_sell_profit
-                stop_loss = profit_percent < -self.currency.new_order_threshold
+                stop_loss = profit_percent < -self.currency.new_order_threshold and -0.99 > profit_percent < -1.01
 
                 if profit_percent > 0:
                     log('Can sell ' + self.currency.currency_pair + ' at a profit of ' + "{0:.2f}".format(
@@ -165,7 +165,7 @@ class MyTradeAlgorithm(ITradeAlgorithm):
                     # sell rate / buy rate (assume a fee of 0.25%)
                     profit_percent = (self.combined_sell.rate / (self.lowest_ask + (self.lowest_ask * 0.0025))) - 1
                     make_buy = profit_percent > self.currency.min_buy_profit
-                    stop_loss = profit_percent < -self.currency.new_order_threshold
+                    stop_loss = profit_percent < -self.currency.new_order_threshold and -0.99 > profit_percent < -1.01
 
                     if profit_percent > 0:
                         log('Can buy ' + self.currency.currency_pair + ' at a profit of ' + "{0:.2f}".format(

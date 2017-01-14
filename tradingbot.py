@@ -1,5 +1,7 @@
 import threading
 from threading import Timer
+import random
+import time
 
 from datetime import datetime
 
@@ -84,7 +86,7 @@ def update_loop(algorithm):
         try:
             algorithm.update()
         except Exception as e:
-            log('An error occured: ' + str(e.args), True)
+            log('An error occurred: ' + str(e.args), True)
 
         loop = Timer(update_interval, update_loop, [algorithm])
         loop.start()
@@ -101,6 +103,7 @@ def main():
         for currency in trade_currencies:
             algorithm = MyTradeAlgorithm(poloniex, currency)
             update_loop(algorithm)
+            time.sleep(random.randint(1, 10))
     except KeyboardInterrupt:
         quit()
 
