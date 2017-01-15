@@ -99,7 +99,7 @@ def update_loop(algorithm):
         except Exception as e:
             log('An error occurred: ' + str(e.args), True)
 
-        loop = Timer(update_interval, update_loop, [algorithm])
+        loop = Timer(update_interval + random.randint(1, 10), update_loop, [algorithm])
         loop.start()
 
 

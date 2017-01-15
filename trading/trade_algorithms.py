@@ -137,7 +137,8 @@ class MyTradeAlgorithm(ITradeAlgorithm):
             if self.combined_buy is not None:
                 # sell rate / buy rate (assume a fee of 0.25%)
                 profit_percent = ((self.highest_bid - (self.highest_bid * 0.0025)) / self.combined_buy.rate) - 1
-                make_sell = profit_percent > self.currency.min_sell_profit
+                combined_buy_amount = (abs(self.combined_buy.amount) + abs(self.combined_buy.amount * profit_percent))
+                make_sell = profit_percent > self.currency.min_sell_profit and (self.combined_sell is None or self.combined_sell.amount < combined_buy_amount)
                 stop_loss = profit_percent < -self.currency.new_order_threshold and -0.99 > profit_percent < -1.01
 
                 if profit_percent > 0:
@@ -154,7 +155,7 @@ class MyTradeAlgorithm(ITradeAlgorithm):
                     return self.sell(amount, profit_percent)
             else:
                 if self.last_trade_type != TradeResult.failure:
-                    log(self.currency.currency_pair + ': No previous buys to compare against', True)
+                    log(self.currency.currency_pair + ': No previous buys to compare against')
                 if self.combined_sell is None:
                     return self.open_new_position()  # only open one speculative position if none have been opened before
                 return TradeResult.failure
@@ -166,7 +167,8 @@ class MyTradeAlgorithm(ITradeAlgorithm):
                 if self.combined_sell is not None:
                     # sell rate / buy rate (assume a fee of 0.25%)
                     profit_percent = (self.combined_sell.rate / (self.lowest_ask + (self.lowest_ask * 0.0025))) - 1
-                    make_buy = profit_percent > self.currency.min_buy_profit
+                    combined_sell_amount = (abs(self.combined_sell.amount) + abs(self.combined_sell.amount * profit_percent))
+                    make_buy = profit_percent > self.currency.min_buy_profit and (self.combined_buy is None or self.combined_buy.amount < combined_sell_amount)
                     stop_loss = profit_percent < -self.currency.new_order_threshold and -0.99 > profit_percent < -1.01
 
                     if profit_percent > 0:
@@ -183,9 +185,11 @@ class MyTradeAlgorithm(ITradeAlgorithm):
                         return self.buy(main_amount, amount, profit_percent)
                 else:
                     if self.last_trade_type != TradeResult.failure:
-                        log(self.currency.currency_pair + ': No previous sells to compare against', True)
-                    if self.combined_buy is None:
-                        return self.open_new_position()  # only open one speculative position if none have been opened before
+                        log(self.currency.currency_pair + ': No previous sells to compare against')
+                    # only open one speculative position if none have been opened before
+                    # or if the amount purchased is less than the minimum alt currency specified
+                    if self.combined_buy is None or self.combined_buy.amount <= self.currency.min_alt:
+                        return self.open_new_position()
                     return TradeResult.failure
 
         return TradeResult.none
