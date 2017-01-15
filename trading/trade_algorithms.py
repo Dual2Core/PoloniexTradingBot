@@ -168,7 +168,7 @@ class MyTradeAlgorithm(ITradeAlgorithm):
                     # sell rate / buy rate (assume a fee of 0.25%)
                     profit_percent = (self.combined_sell.rate / (self.lowest_ask + (self.lowest_ask * 0.0025))) - 1
                     combined_sell_amount = (abs(self.combined_sell.amount) + abs(self.combined_sell.amount * profit_percent))
-                    make_buy = profit_percent > self.currency.min_buy_profit and (self.combined_buy is None or self.combined_buy.amount < combined_sell_amount)
+                    make_buy = profit_percent > self.currency.min_buy_profit and (self.combined_buy is None or (self.combined_buy.amount < combined_sell_amount or self.combined_buy.amount <= self.currency.min_alt))
                     stop_loss = profit_percent < -self.currency.new_order_threshold and -0.99 > profit_percent < -1.01
 
                     if profit_percent > 0:
