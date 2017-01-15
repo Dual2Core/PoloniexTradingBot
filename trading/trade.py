@@ -19,9 +19,14 @@ class Trade:
             raise RuntimeError(order['error'])
         else:
             order_number = order['orderNumber']
-            time.sleep(5)  # wait for the trade to propagate
-            self.buy_order = OrderHistory(poloniex, minutes=60, currency_pair=currency_pair).get_order(order_number)
 
+            # wait until the trade propagates before returning.
+            order = None
+            while order is None:
+                time.sleep(1)
+                order = OrderHistory(poloniex, minutes=60, currency_pair=currency_pair).get_order(order_number)
+
+            self.buy_order = order
             return self.buy_order
 
     def sell(self, poloniex, rate, amount, currency_pair='BTC_LTC'):
@@ -32,9 +37,14 @@ class Trade:
             raise RuntimeError(order['error'])
         else:
             order_number = order['orderNumber']
-            time.sleep(5)  # wait for the trade to propagate
-            self.sell_order = OrderHistory(poloniex, minutes=15, currency_pair=currency_pair).get_order(order_number)
 
+            # wait until the trade propagates before returning.
+            order = None
+            while order is None:
+                time.sleep(1)
+                order = OrderHistory(poloniex, minutes=15, currency_pair=currency_pair).get_order(order_number)
+
+            self.sell_order = order
             return self.sell_order
 
     def complete(self):
